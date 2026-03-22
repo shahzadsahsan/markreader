@@ -1,36 +1,66 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# MarkReader
 
-## Getting Started
+A local macOS app for browsing and reading markdown files. Watches your folders, smart-filters out framework noise, and provides a pleasant dark-theme reading experience with customizable palettes.
 
-First, run the development server:
+![macOS](https://img.shields.io/badge/platform-macOS-black) ![Next.js](https://img.shields.io/badge/Next.js-15-black) ![Electron](https://img.shields.io/badge/Electron-34-black)
+
+## Features
+
+- **Folder watching** — monitors directories for `.md` files with live updates via SSE
+- **Smart filtering** — excludes `node_modules`, build artifacts, LICENSE, CHANGELOG, and agent workflow files (~610 human-readable files from ~8,600 total)
+- **4 sidebar views** — Recents, Folders, Favorites, History
+- **First-run setup** — native macOS folder picker to choose what to watch
+- **9 color palettes** — Parchment Dusk, Deep Ocean, Rosewood, Terminal Green, and more
+- **Reader mode** — distraction-free reading with zoom controls
+- **Native macOS app** — Electron wrapper with menu bar integration, window state persistence, Reveal in Finder
+- **Keyboard-driven** — `1-4` for views, `j/k` for navigation, `s` to star, `/` to search, `Cmd+.` for focus mode
+
+## Download
+
+Grab the latest `.dmg` from [Releases](https://github.com/shahzadsahsan/markreader/releases).
+
+> The app is unsigned. Right-click → Open on first launch to bypass Gatekeeper.
+
+## Development
 
 ```bash
+# Install dependencies
+npm install
+
+# Run the web app
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+
+# Run inside Electron
+cd macos
+npm install
+npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Building the macOS App
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+# Build Next.js first
+npm run build
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+# Build and package the Electron app
+cd macos
+npm run make
+```
 
-## Learn More
+Artifacts land in `macos/out/make/` (DMG + ZIP).
 
-To learn more about Next.js, take a look at the following resources:
+## Stack
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+- **Next.js 15** — App Router, TypeScript, Tailwind CSS
+- **chokidar** — file system watching
+- **markdown-it** — rendering with anchor links and syntax highlighting
+- **highlight.js** — code block syntax highlighting (github-dark theme)
+- **Electron 34** — native macOS wrapper with Forge packaging
+- **JetBrains Mono** — sidebar, headings, code
+- **Source Serif 4** — prose body text
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Architecture
 
-## Deploy on Vercel
+The app runs a local Next.js server that watches configured directories. The Electron wrapper spawns this server on a random port and loads it in a BrowserWindow. State persists to `~/.markreader/state.json`.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+See [ARCHITECTURE.md](ARCHITECTURE.md) for detailed implementation notes.
