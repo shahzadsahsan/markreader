@@ -130,6 +130,54 @@ function checkExistingServer(port: number): Promise<boolean> {
   });
 }
 
+// ── Node.js Binary Detection ───────────────────────────────────────────────────
+
+/**
+ * Locate the Node.js binary at runtime.
+ * macOS GUI apps launch with a stripped PATH — no nvm, no Homebrew.
+ * We check explicit locations so the packaged .app works without a terminal.
+ */
+function findNodeBin(): string {
+  const candidates: string[] = [];
+
+  // nvm (most common on dev machines) — pick latest version
+  const nvmDir = path.join(os.homedir(), '.nvm', 'versions', 'node');
+  try {
+    if (fs.existsSync(nvmDir)) {
+      const versions = fs.readdirSync(nvmDir)
+        .filter(v => v.startsWith('v'))
+        .sort((a, b) => {
+          const av = a.slice(1).split('.').map(Number);
+          const bv = b.slice(1).split('.').map(Number);
+          for (let i = 0; i < 3; i++) {
+            if ((av[i] ?? 0) !== (bv[i] ?? 0)) return (bv[i] ?? 0) - (av[i] ?? 0);
+          }
+          return 0;
+        });
+      for (const v of versions) {
+        candidates.push(path.join(nvmDir, v, 'bin', 'node'));
+      }
+    }
+  } catch { /* ignore */ }
+
+  // Homebrew (Apple Silicon and Intel), Volta, system
+  candidates.push(
+    path.join(os.homedir(), '.volta', 'bin', 'node'),
+    '/opt/homebrew/bin/node',
+    '/usr/local/bin/node',
+    '/usr/bin/node',
+  );
+
+  for (const c of candidates) {
+    if (fs.existsSync(c)) return c;
+  }
+
+  throw new Error(
+    'Node.js not found.\n\nInstall Node.js from https://nodejs.org\n' +
+    'or via Homebrew: brew install node'
+  );
+}
+
 // ── Next.js Server Management ──────────────────────────────────────────────────
 
 let nextProcess: ChildProcess | null = null;
@@ -154,23 +202,16 @@ async function startNextServer(): Promise<number> {
 
   const command = isDev ? 'dev' : 'start';
 
-  // Use the next binary directly from the project's node_modules.
-  // macOS GUI apps don't inherit shell PATH, so npx/node may not be found.
-  const nextBin = path.join(PROJECT_ROOT, 'node_modules', '.bin', 'next');
+  // Find node binary explicitly — macOS GUI apps have minimal PATH,
+  // so we search nvm, Volta, and Homebrew locations directly.
+  const nodeBin = findNodeBin();
+  // Invoke next.js JS entry directly to avoid shell wrapper PATH dependency
+  const nextScript = path.join(PROJECT_ROOT, 'node_modules', 'next', 'dist', 'bin', 'next');
 
-  // Ensure PATH includes common node install locations for child processes
-  const shellPath = [
-    '/opt/homebrew/bin',
-    '/usr/local/bin',
-    '/usr/bin',
-    process.env.PATH || '',
-  ].join(':');
-
-  nextProcess = spawn(nextBin, [command, '-p', String(port), '-H', '127.0.0.1'], {
+  nextProcess = spawn(nodeBin, [nextScript, command, '-p', String(port), '-H', '127.0.0.1'], {
     cwd: PROJECT_ROOT,
     env: {
       ...process.env,
-      PATH: shellPath,
       NODE_ENV: isDev ? 'development' : 'production',
       PORT: String(port),
     },

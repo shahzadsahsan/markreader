@@ -2,7 +2,8 @@
 // All shared state lives on globalThis to survive Next.js module isolation
 // between instrumentation.ts and API route contexts (mitigation #1).
 
-import { watch as chokidarWatch, type FSWatcher } from 'chokidar';
+// Type-only import — erased at compile time, no Turbopack bundling
+import type { FSWatcher } from 'chokidar';
 import * as fs from 'fs';
 import { stat } from 'fs/promises';
 import path from 'path';
@@ -162,6 +163,11 @@ async function createWatcher(): Promise<FSWatcher> {
       .replace(/\*/g, '[^/]*');
     return new RegExp(pattern);
   });
+
+  // Load chokidar at runtime via require to avoid Turbopack's static analysis
+  // and external module aliasing bug with serverExternalPackages.
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const { watch: chokidarWatch } = require('chokidar') as typeof import('chokidar');
 
   const watcher = chokidarWatch(g.__mrWatchedDirs, {
     ignored: (filePath: string, stats?: Stats) => {
