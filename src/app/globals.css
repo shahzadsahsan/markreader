@@ -200,6 +200,30 @@ body {
   font-size: inherit;
 }
 
+/* Copy button on code blocks */
+.copy-btn {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  padding: 2px 8px;
+  font-size: 10px;
+  font-family: var(--font-jetbrains-mono), monospace;
+  color: var(--text-muted);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+pre:hover .copy-btn {
+  opacity: 1;
+}
+.copy-btn:hover {
+  color: var(--text);
+  border-color: var(--accent);
+}
+
 /* Blockquotes — amber left border */
 .prose-reader blockquote {
   border-left: 3px solid var(--accent);

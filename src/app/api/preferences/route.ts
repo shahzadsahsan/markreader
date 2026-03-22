@@ -2,7 +2,7 @@
 // POST /api/preferences — Toggle preset, add/remove watch dir
 
 import { NextRequest, NextResponse } from 'next/server';
-import { getPreferences, togglePreset, addWatchDir, removeWatchDir } from '@/lib/state';
+import { getPreferences, togglePreset, addWatchDir, removeWatchDir, getMinFileLength, saveMinFileLength } from '@/lib/state';
 import { FILTER_PRESETS, countPresetMatches } from '@/lib/presets';
 import { getFileRegistry, refreshPresets, getWatchedDirs, addWatchPath, removeWatchPath } from '@/lib/watcher';
 import os from 'os';
@@ -26,11 +26,14 @@ export async function GET() {
     active: prefs.activePresets.includes(p.id),
   }));
 
+  const minFileLength = await getMinFileLength();
+
   return NextResponse.json({
     presets: presetsWithCounts,
     activePresets: prefs.activePresets,
     watchDirs: getWatchedDirs(),
     customWatchDirs: prefs.watchDirs,
+    minFileLength,
   });
 }
 
@@ -56,6 +59,11 @@ export async function POST(request: NextRequest) {
     await removeWatchDir(expanded);
     removeWatchPath(expanded);
     return NextResponse.json({ ok: true });
+  }
+
+  if (body.minFileLength !== undefined) {
+    await saveMinFileLength(Number(body.minFileLength));
+    return NextResponse.json({ ok: true, minFileLength: Number(body.minFileLength) });
   }
 
   return NextResponse.json({ error: 'Invalid action' }, { status: 400 });

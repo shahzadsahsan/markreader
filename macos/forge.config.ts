@@ -7,7 +7,7 @@ const config: ForgeConfig = {
   packagerConfig: {
     name: 'MarkReader',
     executableName: 'MarkReader',
-    appBundleId: 'com.shahzad.markreader',
+    appBundleId: 'com.markreader.app',
     icon: './resources/icon',
     asar: true,
     // Include the parent Next.js app in the package

@@ -341,6 +341,28 @@ export function MarkdownPreview({
     return () => observer.disconnect();
   }, [html]);
 
+  // Add copy buttons to code blocks
+  useEffect(() => {
+    if (!proseRef.current) return;
+    const pres = proseRef.current.querySelectorAll('pre');
+    pres.forEach(pre => {
+      if (pre.querySelector('.copy-btn')) return; // already has one
+      const btn = document.createElement('button');
+      btn.className = 'copy-btn';
+      btn.textContent = 'Copy';
+      btn.addEventListener('click', () => {
+        const code = pre.querySelector('code');
+        if (code) {
+          navigator.clipboard.writeText(code.textContent || '');
+          btn.textContent = 'Copied!';
+          setTimeout(() => { btn.textContent = 'Copy'; }, 1500);
+        }
+      });
+      pre.style.position = 'relative';
+      pre.appendChild(btn);
+    });
+  }, [html]);
+
   // Resolve a .md filename relative to the current file's directory
   const resolveAndNavigate = useCallback((href: string) => {
     if (!fileContent?.path) return;
@@ -432,6 +454,35 @@ export function MarkdownPreview({
 
   return (
     <div>
+      {/* Reader mode exit button */}
+      {readerMode && (
+        <button
+          onClick={onToggleReaderMode}
+          style={{
+            position: 'fixed',
+            top: 16,
+            right: 16,
+            padding: '4px 12px',
+            fontSize: 11,
+            fontFamily: 'var(--font-jetbrains-mono), monospace',
+            color: 'var(--text-muted)',
+            background: 'rgba(22, 22, 22, 0.8)',
+            border: '1px solid var(--border)',
+            borderRadius: 20,
+            cursor: 'pointer',
+            opacity: 0.3,
+            transition: 'opacity 0.2s',
+            zIndex: 100,
+            backdropFilter: 'blur(8px)',
+          }}
+          onMouseEnter={e => (e.currentTarget.style.opacity = '1')}
+          onMouseLeave={e => (e.currentTarget.style.opacity = '0.3')}
+          title="Exit focus mode (Esc)"
+        >
+          Exit Focus
+        </button>
+      )}
+
       {/* File header */}
       <div
         className="file-header sticky top-0 z-10 px-6 py-3 border-b backdrop-blur-sm"

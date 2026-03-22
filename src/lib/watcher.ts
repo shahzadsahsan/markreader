@@ -3,6 +3,7 @@
 // between instrumentation.ts and API route contexts (mitigation #1).
 
 import { watch as chokidarWatch, type FSWatcher } from 'chokidar';
+import * as fs from 'fs';
 import { stat } from 'fs/promises';
 import path from 'path';
 import os from 'os';
@@ -11,13 +12,19 @@ import { IGNORED_PATHS, isExcludedFile, isExcludedPath } from './filters';
 import { matchesActivePreset } from './presets';
 import type { Stats } from 'fs';
 import { computeContentHash } from './hash';
-import { getFilters, reconcilePaths, checkLiveMove, getActivePresets, getWatchDirs } from './state';
+import { getFilters, reconcilePaths, checkLiveMove, getActivePresets, getWatchDirs, getMinFileLength } from './state';
 
-// Default watched directories
-const DEFAULT_WATCH_DIRS = [
-  path.join(os.homedir(), 'Vibe Coding'),
-  path.join(os.homedir(), '.claude'),
-];
+// Default watched directories — only include dirs that actually exist
+function getDefaultWatchDirs(): string[] {
+  const candidates = [
+    path.join(os.homedir(), '.claude'),
+    path.join(os.homedir(), 'Documents'),
+  ];
+  return candidates.filter(dir => {
+    try { return fs.existsSync(dir); } catch { return false; }
+  });
+}
+const DEFAULT_WATCH_DIRS = getDefaultWatchDirs();
 
 const DEBOUNCE_MS = 100;
 
@@ -33,6 +40,7 @@ interface MarkReaderGlobal {
   __mrUserFilters?: FilterConfig;
   __mrActivePresets: FilterPresetId[];
   __mrWatchedDirs: string[];
+  __mrMinFileLength: number;
 }
 
 const g = globalThis as unknown as MarkReaderGlobal;
@@ -45,6 +53,7 @@ if (g.__mrTotalScanned === undefined) g.__mrTotalScanned = 0;
 if (!g.__mrDebounceTimers) g.__mrDebounceTimers = new Map();
 if (!g.__mrActivePresets) g.__mrActivePresets = [];
 if (!g.__mrWatchedDirs) g.__mrWatchedDirs = [...DEFAULT_WATCH_DIRS];
+if (g.__mrMinFileLength === undefined) g.__mrMinFileLength = 0;
 
 function getProject(filePath: string): string {
   for (const dir of g.__mrWatchedDirs) {
@@ -105,6 +114,14 @@ function handleFileEvent(filePath: string, eventType: 'add' | 'change'): void {
       // Check preset filters
       if (matchesActivePreset(filePath, filename, g.__mrActivePresets)) return;
 
+      // Check minimum file length filter
+      if (g.__mrMinFileLength > 0) {
+        try {
+          const fileStat = fs.statSync(filePath);
+          if (fileStat.size < g.__mrMinFileLength) return;
+        } catch { return; }
+      }
+
       const entry = await buildFileEntry(filePath);
       g.__mrRegistry.set(filePath, entry);
 
@@ -131,11 +148,12 @@ async function createWatcher(): Promise<FSWatcher> {
   const filters = await getFilters();
   g.__mrUserFilters = filters;
 
-  // Load active presets and custom watch dirs
+  // Load active presets, custom watch dirs, and min file length
   const activePresets = await getActivePresets();
   g.__mrActivePresets = activePresets;
   const customDirs = await getWatchDirs();
   g.__mrWatchedDirs = [...DEFAULT_WATCH_DIRS, ...customDirs];
+  g.__mrMinFileLength = await getMinFileLength();
 
   const ignoredPatterns = IGNORED_PATHS.map(glob => {
     const pattern = glob

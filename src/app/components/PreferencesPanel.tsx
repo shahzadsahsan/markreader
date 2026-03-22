@@ -22,8 +22,10 @@ export function PreferencesPanel({ open, onClose, onPresetsChanged }: Preference
   const [watchDirs, setWatchDirs] = useState<string[]>([]);
   const [customDirs, setCustomDirs] = useState<string[]>([]);
   const [newDir, setNewDir] = useState('');
+  const [minFileLength, setMinFileLength] = useState(0);
   const [loading, setLoading] = useState(true);
   const panelRef = useRef<HTMLDivElement>(null);
+  const minFileLengthTimer = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     if (!open) return;
@@ -34,6 +36,7 @@ export function PreferencesPanel({ open, onClose, onPresetsChanged }: Preference
         setPresets(data.presets || []);
         setWatchDirs(data.watchDirs || []);
         setCustomDirs(data.customWatchDirs || []);
+        setMinFileLength(data.minFileLength || 0);
         setLoading(false);
       })
       .catch(() => setLoading(false));
@@ -142,22 +145,67 @@ export function PreferencesPanel({ open, onClose, onPresetsChanged }: Preference
             </div>
           ) : (
             <>
-              {/* Filter presets section */}
+              {/* Filters section */}
               <div className="px-5 py-4">
                 <div className="flex items-baseline justify-between mb-3">
                   <h3
                     className="text-xs font-medium uppercase tracking-wider"
                     style={{ color: 'var(--text-muted)' }}
                   >
-                    Filter Categories
+                    Filters
                   </h3>
                   <span className="text-[10px]" style={{ color: 'var(--text-muted)' }}>
                     {activeCount} active · hiding {hiddenCount} files
                   </span>
                 </div>
 
-                <div className="flex flex-col gap-1">
-                  {presets.map(preset => (
+                {/* Min file length filter */}
+                <div
+                  className="px-3 py-2.5 rounded-lg mb-3"
+                  style={{ border: `1px solid ${minFileLength > 0 ? 'var(--accent)' : 'var(--border)'}`, background: minFileLength > 0 ? 'var(--active-bg)' : 'transparent' }}
+                >
+                  <div className="flex items-center justify-between mb-1.5">
+                    <span className="text-xs font-medium" style={{ fontFamily: 'var(--font-jetbrains-mono), monospace', color: 'var(--text)' }}>
+                      Minimum file size
+                    </span>
+                    <span className="text-[10px]" style={{ color: minFileLength > 0 ? 'var(--accent)' : 'var(--text-muted)' }}>
+                      {minFileLength === 0 ? 'Off' : minFileLength < 1024 ? `${minFileLength} B` : `${(minFileLength / 1024).toFixed(1)} KB`}
+                    </span>
+                  </div>
+                  <input
+                    type="range"
+                    min={0}
+                    max={5120}
+                    step={64}
+                    value={minFileLength}
+                    onChange={(e) => {
+                      const val = Number(e.target.value);
+                      setMinFileLength(val);
+                      if (minFileLengthTimer.current) clearTimeout(minFileLengthTimer.current);
+                      minFileLengthTimer.current = setTimeout(() => {
+                        fetch('/api/preferences', {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({ minFileLength: val }),
+                        }).then(() => onPresetsChanged()).catch(() => {});
+                      }, 300);
+                    }}
+                    className="w-full"
+                    style={{ accentColor: 'var(--accent)', height: 4 }}
+                  />
+                  <p className="text-[10px] mt-1" style={{ color: 'var(--text-muted)' }}>
+                    Hide short files (stubs, empty docs, incidental files)
+                  </p>
+                </div>
+
+                {/* Generic presets */}
+                {(() => {
+                  const genericPresets = presets.filter(p => !p.id.startsWith('claude-'));
+                  const claudePresets = presets.filter(p => p.id.startsWith('claude-'));
+                  const visibleGeneric = genericPresets.filter(p => p.matchCount > 0 || p.active);
+                  const visibleClaude = claudePresets.filter(p => p.matchCount > 0 || p.active);
+
+                  const renderPreset = (preset: PresetInfo) => (
                     <button
                       key={preset.id}
                       className="flex items-center gap-3 px-3 py-2 rounded-lg text-left transition-colors"
@@ -179,34 +227,40 @@ export function PreferencesPanel({ open, onClose, onPresetsChanged }: Preference
                       </span>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2">
-                          <span
-                            className="text-xs font-medium"
-                            style={{
-                              fontFamily: 'var(--font-jetbrains-mono), monospace',
-                              color: 'var(--text)',
-                            }}
-                          >
+                          <span className="text-xs font-medium" style={{ fontFamily: 'var(--font-jetbrains-mono), monospace', color: 'var(--text)' }}>
                             {preset.label}
                           </span>
                           {preset.matchCount > 0 && (
-                            <span
-                              className="text-[10px] px-1.5 rounded"
-                              style={{
-                                background: preset.active ? 'rgba(212,160,74,0.2)' : 'var(--hover-bg)',
-                                color: preset.active ? 'var(--accent)' : 'var(--text-muted)',
-                              }}
-                            >
+                            <span className="text-[10px] px-1.5 rounded" style={{ background: preset.active ? 'rgba(212,160,74,0.2)' : 'var(--hover-bg)', color: preset.active ? 'var(--accent)' : 'var(--text-muted)' }}>
                               {preset.matchCount}
                             </span>
                           )}
                         </div>
-                        <p className="text-[10px] mt-0.5" style={{ color: 'var(--text-muted)' }}>
-                          {preset.description}
-                        </p>
+                        <p className="text-[10px] mt-0.5" style={{ color: 'var(--text-muted)' }}>{preset.description}</p>
                       </div>
                     </button>
-                  ))}
-                </div>
+                  );
+
+                  return (
+                    <>
+                      {visibleGeneric.length > 0 && (
+                        <div className="mb-3">
+                          <p className="text-[10px] uppercase tracking-wider mb-1.5" style={{ color: 'var(--text-muted)' }}>General</p>
+                          <div className="flex flex-col gap-1">{visibleGeneric.map(renderPreset)}</div>
+                        </div>
+                      )}
+                      {visibleClaude.length > 0 && (
+                        <div>
+                          <p className="text-[10px] uppercase tracking-wider mb-1.5" style={{ color: 'var(--text-muted)' }}>Claude Code</p>
+                          <div className="flex flex-col gap-1">{visibleClaude.map(renderPreset)}</div>
+                        </div>
+                      )}
+                      {visibleGeneric.length === 0 && visibleClaude.length === 0 && (
+                        <p className="text-xs text-center py-3" style={{ color: 'var(--text-muted)' }}>No matching filters for your watched folders</p>
+                      )}
+                    </>
+                  );
+                })()}
               </div>
 
               {/* Watch directories section */}

@@ -7,6 +7,7 @@ import {
   getFavoriteFolders,
   getExcludedPaths,
   getWatchDirs,
+  isFirstRun,
   saveSidebarView,
   saveSidebarCollapsed,
   saveLastSelectedPath,
@@ -25,7 +26,7 @@ export async function GET() {
     getExcludedPaths(),
     getWatchDirs(),
   ]);
-  return NextResponse.json({ ui, favoriteFolders, excludedPaths, customWatchDirs });
+  return NextResponse.json({ ui, favoriteFolders, excludedPaths, customWatchDirs, firstRun: isFirstRun() });
 }
 
 export async function POST(request: NextRequest) {

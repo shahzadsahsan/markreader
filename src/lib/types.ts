@@ -29,18 +29,21 @@ export interface FilterConfig {
   excludedNames: string[];   // User-added filename regex strings
 }
 
-// Filter presets — toggleable categories seeded from real file analysis
+// Filter presets — toggleable categories
+// Generic presets (useful for any developer)
+// Claude Code presets (for Claude Code users)
 export type FilterPresetId =
-  | 'claude-skills'      // SKILL.md files in .claude/ (67 files)
-  | 'claude-plugins'     // Plugin/agent reference docs (345 files)
-  | 'claude-memory'      // Project memory files (29 files)
-  | 'claude-plans'       // Plan files in .claude/plans/ (24 files)
-  | 'claude-requirements' // Requirements pipeline artifacts (8 files)
-  | 'rvry-sessions'      // .rvry/sessions/ deepthink logs (53 files)
-  | 'gsd-pipeline'       // .planning/ pipeline artifacts (50 files)
-  | 'readme-files'       // README.md across all projects (61 files)
-  | 'agents-md'          // AGENTS.md files from Next.js scaffold
-  | 'claude-cognition';  // Scheduled tasks, cognition sessions
+  | 'readme-files'        // README.md files
+  | 'license-files'       // LICENSE, CONTRIBUTING
+  | 'changelog-files'     // CHANGELOG, CHANGES
+  | 'dotfile-configs'     // .github/*.md
+  | 'claude-plugins'      // Plugin/agent docs
+  | 'claude-skills'       // SKILL.md files
+  | 'claude-sessions'     // RVRY/deepthink sessions
+  | 'claude-pipeline'     // GSD pipeline artifacts
+  | 'claude-memory'       // Project memory files
+  | 'claude-plans'        // Plan files
+  | 'claude-cognition';   // Scheduled tasks, cognition
 
 export interface FilterPreset {
   id: FilterPresetId;
@@ -54,6 +57,7 @@ export interface FilterPreset {
 export interface PreferencesState {
   activePresets: FilterPresetId[];  // Which presets are enabled (filtering out)
   watchDirs: string[];               // User-added watch directories
+  minFileLength?: number;            // Hide files shorter than this many bytes (0 = disabled)
 }
 
 export interface AppState {

@@ -1,14 +1,27 @@
 import { app, Menu, shell, BrowserWindow, MenuItemConstructorOptions } from 'electron';
 import * as path from 'path';
 import * as os from 'os';
+import * as fs from 'fs';
 
 const STATE_DIR = path.join(os.homedir(), '.markreader');
 const STATE_FILE = path.join(STATE_DIR, 'state.json');
 
-const WATCHED_DIRS = [
-  path.join(os.homedir(), 'Vibe Coding'),
-  path.join(os.homedir(), '.claude'),
-];
+function getWatchedDirs(): string[] {
+  const dirs: string[] = [];
+  // Include ~/.claude if it exists on disk
+  const claudeDir = path.join(os.homedir(), '.claude');
+  if (fs.existsSync(claudeDir)) dirs.push(claudeDir);
+  // Read custom dirs from state
+  try {
+    if (fs.existsSync(STATE_FILE)) {
+      const state = JSON.parse(fs.readFileSync(STATE_FILE, 'utf-8'));
+      if (state?.preferences?.watchDirs) {
+        dirs.push(...state.preferences.watchDirs);
+      }
+    }
+  } catch { /* ignore corrupt or missing state */ }
+  return [...new Set(dirs)]; // dedupe
+}
 
 export function buildMenu(): Menu {
   const template: MenuItemConstructorOptions[] = [
@@ -41,7 +54,7 @@ export function buildMenu(): Menu {
           click: () => shell.showItemInFolder(STATE_FILE),
         },
         { type: 'separator' },
-        ...WATCHED_DIRS.map((dir) => ({
+        ...getWatchedDirs().map((dir) => ({
           label: `Open ${path.basename(dir)}/`,
           click: () => shell.openPath(dir),
         })),

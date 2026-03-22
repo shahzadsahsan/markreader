@@ -56,6 +56,9 @@ export function AppShell() {
   const [showWelcome, setShowWelcome] = useState(false);
   const welcomeDismissedRef = useRef(false);
 
+  // Shortcuts cheat sheet
+  const [showShortcuts, setShowShortcuts] = useState(false);
+
   // Zoom & reader mode
   const ZOOM_STEPS = [0.85, 1, 1.25, 1.5, 2];
   const [zoomLevel, setZoomLevel] = useState(1);
@@ -90,6 +93,9 @@ export function AppShell() {
         }
         if (data.customWatchDirs) {
           setCustomWatchDirs(data.customWatchDirs);
+        }
+        if (data.firstRun) {
+          setShowWelcome(true);
         }
         stateRestoredRef.current = true;
       })
@@ -575,6 +581,10 @@ export function AppShell() {
           if (selectedPath) toggleStar(selectedPath);
           break;
         }
+        case '?': {
+          setShowShortcuts(prev => !prev);
+          break;
+        }
         case 'j':
         case 'k':
         case 'ArrowDown':
@@ -603,12 +613,7 @@ export function AppShell() {
     return () => document.removeEventListener('keydown', handleKey);
   }, [changeView, toggleStar, selectFile, selectedPath, filteredFiles, zoomIn, zoomOut, zoomReset, toggleFillScreen, toggleReaderMode, readerMode]);
 
-  // --- Show welcome screen on first run (no files found after scan) ---
-  useEffect(() => {
-    if (scanComplete && files.length === 0 && !welcomeDismissedRef.current) {
-      setShowWelcome(true);
-    }
-  }, [scanComplete, files.length]);
+  // Welcome screen is now triggered by firstRun flag from /api/ui (state.json didn't exist)
 
   // --- Trigger native folder picker (shared by welcome + menu) ---
   const triggerAddFolder = useCallback(async () => {
@@ -772,6 +777,53 @@ export function AppShell() {
           onOpenPreferences={() => setPrefsOpen(true)}
         />
       </div>
+
+      {showShortcuts && (
+        <div
+          style={{
+            position: 'fixed', inset: 0, zIndex: 9999,
+            background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(4px)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+          }}
+          onClick={() => setShowShortcuts(false)}
+        >
+          <div
+            style={{
+              background: 'var(--surface)', border: '1px solid var(--border)',
+              borderRadius: 12, padding: '24px 32px', maxWidth: 420,
+              fontFamily: 'var(--font-jetbrains-mono), monospace',
+            }}
+            onClick={e => e.stopPropagation()}
+          >
+            <h2 style={{ fontSize: 16, marginBottom: 16, color: 'var(--accent)' }}>Keyboard Shortcuts</h2>
+            <div style={{ display: 'grid', gridTemplateColumns: 'auto 1fr', gap: '8px 16px', fontSize: 12 }}>
+              {([
+                ['1 2 3 4', 'Switch sidebar view'],
+                ['j / k', 'Navigate files'],
+                ['s', 'Star / unstar file'],
+                ['/', 'Focus search'],
+                ['Esc', 'Clear search / exit focus'],
+                ['Cmd + .', 'Toggle focus mode'],
+                ['Cmd + Shift + F', 'Toggle fill screen'],
+                ['Cmd + =', 'Zoom in'],
+                ['Cmd + -', 'Zoom out'],
+                ['Cmd + 0', 'Reset zoom'],
+                ['Cmd + Shift + O', 'Add folder (Electron)'],
+                ['?', 'Show this help'],
+              ] as const).map(([key, desc]) => (
+                <div key={key} style={{ display: 'contents' }}>
+                  <kbd style={{
+                    padding: '2px 6px', borderRadius: 4, fontSize: 11,
+                    background: 'var(--bg)', border: '1px solid var(--border)',
+                    color: 'var(--accent)', textAlign: 'right', whiteSpace: 'nowrap',
+                  }}>{key}</kbd>
+                  <span style={{ color: 'var(--text-muted)' }}>{desc}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
 
       <PreferencesPanel
         open={prefsOpen}

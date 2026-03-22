@@ -21,6 +21,13 @@ function enqueueWrite(fn: () => Promise<void>): Promise<void> {
   return writePromise;
 }
 
+// --- First-run detection ---
+let firstRunDetected = false;
+
+export function isFirstRun(): boolean {
+  return firstRunDetected;
+}
+
 // --- State cache ---
 let cachedState: AppState | null = null;
 
@@ -39,6 +46,7 @@ function defaultState(): AppState {
     preferences: {
       activePresets: [...DEFAULT_ACTIVE_PRESETS],
       watchDirs: [],
+      minFileLength: 0,
     },
     ui: {
       sidebarView: 'recents',
@@ -79,12 +87,14 @@ export async function loadState(): Promise<AppState> {
       }
       if (!parsed.preferences.watchDirs) parsed.preferences.watchDirs = [];
       if (!parsed.preferences.activePresets) parsed.preferences.activePresets = [...DEFAULT_ACTIVE_PRESETS];
+      if (parsed.preferences.minFileLength === undefined) parsed.preferences.minFileLength = 0;
       if (parsed.ui.zoomLevel === undefined) parsed.ui.zoomLevel = 1;
       if (parsed.ui.fillScreen === undefined) parsed.ui.fillScreen = false;
       cachedState = parsed;
     }
   } catch {
     // File doesn't exist or is corrupted — create default
+    firstRunDetected = true;
     cachedState = defaultState();
     await ensureDir();
     await atomicWrite(cachedState);
@@ -400,4 +410,15 @@ export async function removeWatchDir(dirPath: string): Promise<void> {
 export async function getWatchDirs(): Promise<string[]> {
   const state = await loadState();
   return [...state.preferences.watchDirs];
+}
+
+export async function getMinFileLength(): Promise<number> {
+  const state = await loadState();
+  return state.preferences.minFileLength ?? 0;
+}
+
+export async function saveMinFileLength(bytes: number): Promise<void> {
+  const state = await loadState();
+  state.preferences.minFileLength = bytes;
+  enqueueWrite(saveState);
 }

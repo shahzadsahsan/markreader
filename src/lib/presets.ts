@@ -1,14 +1,44 @@
 // MarkReader — Filter Presets
-// Seeded from actual analysis of ~/Vibe Coding/ and ~/.claude/ file populations.
-// Each preset filters a category of Claude Code-generated files.
+// Two categories: generic (any developer) and Claude Code-specific.
 
 import type { FilterPreset, FilterPresetId } from './types';
 
 export const FILTER_PRESETS: FilterPreset[] = [
+  // --- Generic presets (useful for any developer) ---
+  {
+    id: 'readme-files',
+    label: 'README files',
+    description: 'Hide README.md files across all projects',
+    pathPatterns: [],
+    namePatterns: ['^README\\.md$'],
+  },
+  {
+    id: 'license-files',
+    label: 'License & contributing',
+    description: 'Hide LICENSE, LICENSE.md, CONTRIBUTING.md',
+    pathPatterns: [],
+    namePatterns: ['^(LICENSE|CONTRIBUTING)(\\.md)?$'],
+  },
+  {
+    id: 'changelog-files',
+    label: 'Changelogs',
+    description: 'Hide CHANGELOG, CHANGES files',
+    pathPatterns: [],
+    namePatterns: ['^(CHANGELOG|CHANGES)(\\.md)?$'],
+  },
+  {
+    id: 'dotfile-configs',
+    label: 'Dotfile configs',
+    description: 'Hide dotfile config markdown like .github/*.md',
+    pathPatterns: ['\\.github/'],
+    namePatterns: [],
+  },
+
+  // --- Claude Code presets ---
   {
     id: 'claude-plugins',
-    label: 'Plugin & Agent docs',
-    description: 'Reference docs, skills, and configs inside .claude/plugins/ and .claude/agents/',
+    label: 'Plugin & agent docs',
+    description: 'Reference docs, skills, and configs inside plugins/ and agents/',
     pathPatterns: ['plugins/', 'agents/'],
     namePatterns: [],
   },
@@ -20,14 +50,14 @@ export const FILTER_PRESETS: FilterPreset[] = [
     namePatterns: ['^SKILL\\.md$'],
   },
   {
-    id: 'rvry-sessions',
+    id: 'claude-sessions',
     label: 'RVRY deepthink sessions',
-    description: 'Session logs from /deepthink, /think, /challenge in .rvry/sessions/',
+    description: 'Session logs from /deepthink, /think, /challenge in .rvry/',
     pathPatterns: ['.rvry/sessions/', '.rvry/'],
     namePatterns: [],
   },
   {
-    id: 'gsd-pipeline',
+    id: 'claude-pipeline',
     label: 'GSD pipeline artifacts',
     description: 'Planning, verification, and UAT files in .planning/ directories',
     pathPatterns: ['.planning/'],
@@ -37,7 +67,7 @@ export const FILTER_PRESETS: FilterPreset[] = [
     id: 'claude-memory',
     label: 'Claude project memory',
     description: 'MEMORY.md and memory/ folder files Claude uses for context',
-    pathPatterns: ['projects/', '/memory/'],
+    pathPatterns: ['/memory/'],
     namePatterns: ['^MEMORY\\.md$'],
   },
   {
@@ -48,27 +78,6 @@ export const FILTER_PRESETS: FilterPreset[] = [
     namePatterns: [],
   },
   {
-    id: 'claude-requirements',
-    label: 'Requirements pipeline',
-    description: 'Requirements discovery artifacts in .claude/requirements/',
-    pathPatterns: ['requirements/'],
-    namePatterns: [],
-  },
-  {
-    id: 'readme-files',
-    label: 'README files',
-    description: 'README.md files across all projects',
-    pathPatterns: [],
-    namePatterns: ['^README\\.md$'],
-  },
-  {
-    id: 'agents-md',
-    label: 'AGENTS.md files',
-    description: 'Auto-generated AGENTS.md from Next.js scaffold',
-    pathPatterns: [],
-    namePatterns: ['^AGENTS\\.md$'],
-  },
-  {
     id: 'claude-cognition',
     label: 'Claude cognition & tasks',
     description: 'Scheduled tasks, cognition sessions, and worktree artifacts',
@@ -77,17 +86,9 @@ export const FILTER_PRESETS: FilterPreset[] = [
   },
 ];
 
-// Default presets enabled on fresh install — hides the noisiest categories
-export const DEFAULT_ACTIVE_PRESETS: FilterPresetId[] = [
-  'claude-plugins',     // 345 files — biggest noise source
-  'claude-skills',      // 71 files
-  'rvry-sessions',      // 53 files
-  'gsd-pipeline',       // 50 files
-  'agents-md',          // scaffold noise
-  'claude-plans',       // 24 files — temporary plan files
-  'claude-requirements', // 8 files — requirement pipeline artifacts
-  'claude-cognition',   // scheduled tasks + cognition sessions
-];
+// Default presets enabled on fresh install — none active by default.
+// Presets will be auto-activated based on file matches (handled separately).
+export const DEFAULT_ACTIVE_PRESETS: FilterPresetId[] = [];
 
 /**
  * Check if a file matches any of the active presets.

@@ -82,7 +82,7 @@ export function RecentsView({
             {files.length === 0 ? 'No files found' : `No files modified in the last ${timeFilter}`}
           </p>
           {files.length === 0 && (
-            <p className="text-xs mt-1">Watching for .md files...</p>
+            <p className="text-xs mt-1">Add a folder to start reading</p>
           )}
         </div>
       ) : (

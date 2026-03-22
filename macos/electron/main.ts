@@ -12,11 +12,12 @@ import { buildMenu } from './menu';
 const isDev = !app.isPackaged;
 
 // In dev: __dirname is macos/dist-electron/, so ../.. = markreader/
-// In production: the app bundle can't contain the full Next.js project,
-// so we hardcode the source path for this personal-use local app.
+// In production: forge.config.ts copies .next, node_modules, etc. into
+// the app bundle's Resources dir via extraResource, so process.resourcesPath
+// is the effective project root.
 const PROJECT_ROOT = isDev
   ? path.resolve(__dirname, '..', '..')
-  : path.join(os.homedir(), 'Vibe Coding', 'markreader');
+  : process.resourcesPath;
 const STATE_DIR = path.join(os.homedir(), '.markreader');
 const WINDOW_STATE_FILE = path.join(STATE_DIR, 'window-state.json');
 
