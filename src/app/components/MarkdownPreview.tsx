@@ -4,7 +4,7 @@ import { useMemo, useCallback, useEffect, useRef, useState, type CSSProperties }
 import type { FileContentResponse } from '@/lib/types';
 
 // Color palette definitions
-export type PaletteId = 'parchment-dusk' | 'deep-ocean' | 'rosewood' | 'terminal-green' | 'warm-paper' | 'nord-frost' | 'monokai' | 'solarized-dark' | 'catppuccin';
+export type PaletteId = 'parchment-dusk' | 'deep-ocean' | 'rosewood' | 'terminal-green' | 'warm-paper' | 'nord-frost' | 'monokai' | 'solarized-dark' | 'catppuccin' | 'daylight' | 'sepia-light' | 'arctic';
 
 export interface Palette {
   id: PaletteId;
@@ -111,6 +111,42 @@ export const PALETTES: Palette[] = [
       '--prose-list-marker': '#cba6f7', '--prose-th': '#b8a0d8',
       '--text': '#cdd6f4', '--bg': '#121020',
       '--code-bg': '#16142a', '--border': '#2e2a48', '--surface': '#1a1830',
+    },
+  },
+  {
+    id: 'daylight', label: 'Daylight', category: 'Light',
+    vars: {
+      '--prose-h1': '#1a1a2e', '--prose-h2': '#2d3a4a', '--prose-h3': '#8b4513',
+      '--prose-h4': '#2e7d32', '--prose-h5': '#1565c0', '--prose-bold': '#111',
+      '--prose-italic': '#6a1b9a', '--prose-code': '#c62828', '--prose-blockquote': '#78909c',
+      '--prose-list-marker': '#e65100', '--prose-th': '#37474f',
+      '--text': '#1e1e1e', '--bg': '#fafaf8',
+      '--code-bg': '#f0eeea', '--border': '#d8d4cc', '--surface': '#f2f0ec',
+      '--text-muted': '#777', '--accent': '#c07820', '--active-bg': '#ece8e0', '--hover-bg': '#f5f3ef',
+    },
+  },
+  {
+    id: 'sepia-light', label: 'Sepia', category: 'Light',
+    vars: {
+      '--prose-h1': '#5c3d1a', '--prose-h2': '#6d4c28', '--prose-h3': '#8b5e34',
+      '--prose-h4': '#4a6741', '--prose-h5': '#3e6578', '--prose-bold': '#3a2510',
+      '--prose-italic': '#7a4a6a', '--prose-code': '#8b4513', '--prose-blockquote': '#8a7a68',
+      '--prose-list-marker': '#a0682a', '--prose-th': '#6d5a40',
+      '--text': '#3a3028', '--bg': '#f8f0e4',
+      '--code-bg': '#f0e8d8', '--border': '#d8c8a8', '--surface': '#f4ecdc',
+      '--text-muted': '#887868', '--accent': '#b87a30', '--active-bg': '#ece0c8', '--hover-bg': '#f6efe2',
+    },
+  },
+  {
+    id: 'arctic', label: 'Arctic', category: 'Light',
+    vars: {
+      '--prose-h1': '#1e3a5f', '--prose-h2': '#2c5282', '--prose-h3': '#744210',
+      '--prose-h4': '#276749', '--prose-h5': '#553c9a', '--prose-bold': '#1a202c',
+      '--prose-italic': '#6b46c1', '--prose-code': '#2b6cb0', '--prose-blockquote': '#718096',
+      '--prose-list-marker': '#2b6cb0', '--prose-th': '#2d3748',
+      '--text': '#2d3748', '--bg': '#f7fafc',
+      '--code-bg': '#edf2f7', '--border': '#cbd5e0', '--surface': '#eef3f8',
+      '--text-muted': '#718096', '--accent': '#3182ce', '--active-bg': '#e2e8f0', '--hover-bg': '#f0f5fa',
     },
   },
 ];

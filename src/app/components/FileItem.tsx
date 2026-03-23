@@ -60,14 +60,6 @@ export const FileItem = memo(function FileItem({
             {file.name}
           </div>
           <div className="text-xs mt-0.5 flex items-center gap-1.5" style={{ color: 'var(--text-muted)' }}>
-            {!hideProject && (
-              <span
-                className="px-1 py-0.5 rounded text-[10px] shrink-0"
-                style={{ background: 'var(--active-bg)', color: 'var(--text-muted)' }}
-              >
-                {file.project}
-              </span>
-            )}
             <span className="truncate">{label}{formatRelativeTime(timestamp)}</span>
           </div>
         </div>

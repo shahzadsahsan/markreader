@@ -21,7 +21,7 @@ export function PreferencesPanel({ open, onClose, onPresetsChanged }: Preference
   const [presets, setPresets] = useState<PresetInfo[]>([]);
   const [watchDirs, setWatchDirs] = useState<string[]>([]);
   const [customDirs, setCustomDirs] = useState<string[]>([]);
-  const [newDir, setNewDir] = useState('');
+  const [disabledDirs, setDisabledDirs] = useState<Set<string>>(new Set());
   const [minFileLength, setMinFileLength] = useState(0);
   const [loading, setLoading] = useState(true);
   const panelRef = useRef<HTMLDivElement>(null);
@@ -42,30 +42,20 @@ export function PreferencesPanel({ open, onClose, onPresetsChanged }: Preference
       .catch(() => setLoading(false));
   }, [open]);
 
-  // Close on Escape
   useEffect(() => {
     if (!open) return;
-    const handler = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
-    };
+    const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
     document.addEventListener('keydown', handler);
     return () => document.removeEventListener('keydown', handler);
   }, [open, onClose]);
 
-  // Close on click outside
   useEffect(() => {
     if (!open) return;
     const handler = (e: MouseEvent) => {
-      if (panelRef.current && !panelRef.current.contains(e.target as Node)) {
-        onClose();
-      }
+      if (panelRef.current && !panelRef.current.contains(e.target as Node)) onClose();
     };
-    // Delay to avoid the click that opened the panel
     const timeout = setTimeout(() => document.addEventListener('mousedown', handler), 100);
-    return () => {
-      clearTimeout(timeout);
-      document.removeEventListener('mousedown', handler);
-    };
+    return () => { clearTimeout(timeout); document.removeEventListener('mousedown', handler); };
   }, [open, onClose]);
 
   const handleTogglePreset = async (presetId: FilterPresetId) => {
@@ -75,24 +65,8 @@ export function PreferencesPanel({ open, onClose, onPresetsChanged }: Preference
       body: JSON.stringify({ togglePreset: presetId }),
     });
     const data = await res.json();
-    setPresets(prev =>
-      prev.map(p => p.id === presetId ? { ...p, active: data.active } : p)
-    );
+    setPresets(prev => prev.map(p => p.id === presetId ? { ...p, active: data.active } : p));
     onPresetsChanged();
-  };
-
-  const handleAddDir = async () => {
-    const dir = newDir.trim();
-    if (!dir) return;
-    // Expand ~ to home dir
-    const expanded = dir.startsWith('~') ? dir : dir;
-    await fetch('/api/preferences', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ addWatchDir: expanded }),
-    });
-    setCustomDirs(prev => [...prev, expanded]);
-    setNewDir('');
   };
 
   const handleRemoveDir = async (dir: string) => {
@@ -101,13 +75,59 @@ export function PreferencesPanel({ open, onClose, onPresetsChanged }: Preference
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ removeWatchDir: dir }),
     });
+    setWatchDirs(prev => prev.filter(d => d !== dir));
     setCustomDirs(prev => prev.filter(d => d !== dir));
+    onPresetsChanged();
+  };
+
+  const handleToggleDir = async (dir: string) => {
+    const isCurrentlyDisabled = disabledDirs.has(dir);
+    if (isCurrentlyDisabled) {
+      // Re-enable: add it back as a watch dir
+      await fetch('/api/preferences', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ addWatchDir: dir }),
+      });
+      setDisabledDirs(prev => { const n = new Set(prev); n.delete(dir); return n; });
+      if (!watchDirs.includes(dir)) setWatchDirs(prev => [...prev, dir]);
+    } else {
+      // Disable: remove from watcher but keep in list as disabled
+      await fetch('/api/preferences', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ removeWatchDir: dir }),
+      });
+      setDisabledDirs(prev => new Set(prev).add(dir));
+      setWatchDirs(prev => prev.filter(d => d !== dir));
+    }
+    onPresetsChanged();
+  };
+
+  const handleBrowse = async () => {
+    const electron = (window as unknown as { electron?: { selectFolder: () => Promise<string | null> } }).electron;
+    if (electron?.selectFolder) {
+      const dir = await electron.selectFolder();
+      if (dir) {
+        await fetch('/api/preferences', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ addWatchDir: dir }),
+        });
+        setCustomDirs(prev => [...prev, dir]);
+        setWatchDirs(prev => [...prev, dir]);
+        onPresetsChanged();
+      }
+    }
   };
 
   if (!open) return null;
 
   const activeCount = presets.filter(p => p.active).length;
   const hiddenCount = presets.filter(p => p.active).reduce((sum, p) => sum + p.matchCount, 0);
+
+  // Build a unified list of all dirs (active + disabled)
+  const allDirs = [...new Set([...watchDirs, ...Array.from(disabledDirs)])];
 
   return (
     <div className="fixed inset-0 z-50 flex items-start justify-center pt-16" style={{ background: 'rgba(0,0,0,0.6)' }}>
@@ -117,22 +137,11 @@ export function PreferencesPanel({ open, onClose, onPresetsChanged }: Preference
         style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}
       >
         {/* Header */}
-        <div
-          className="flex items-center justify-between px-5 py-3 border-b"
-          style={{ borderColor: 'var(--border)' }}
-        >
-          <h2
-            className="text-sm font-semibold"
-            style={{ fontFamily: 'var(--font-jetbrains-mono), monospace', color: 'var(--text)' }}
-          >
+        <div className="flex items-center justify-between px-5 py-3 border-b" style={{ borderColor: 'var(--border)' }}>
+          <h2 className="text-sm font-semibold" style={{ fontFamily: 'var(--font-jetbrains-mono), monospace', color: 'var(--text)' }}>
             Preferences
           </h2>
-          <button
-            className="tab-btn text-xs"
-            onClick={onClose}
-          >
-            ✕
-          </button>
+          <button className="tab-btn text-xs" onClick={onClose}>✕</button>
         </div>
 
         <div className="max-h-[70vh] overflow-y-auto">
@@ -145,21 +154,21 @@ export function PreferencesPanel({ open, onClose, onPresetsChanged }: Preference
             </div>
           ) : (
             <>
-              {/* Filters section */}
+              {/* Hidden file filters — consistent semantics: checked = hidden */}
               <div className="px-5 py-4">
-                <div className="flex items-baseline justify-between mb-3">
-                  <h3
-                    className="text-xs font-medium uppercase tracking-wider"
-                    style={{ color: 'var(--text-muted)' }}
-                  >
-                    Filters
+                <div className="flex items-baseline justify-between mb-2">
+                  <h3 className="text-xs font-medium uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>
+                    Hide from sidebar
                   </h3>
                   <span className="text-[10px]" style={{ color: 'var(--text-muted)' }}>
-                    {activeCount} active · hiding {hiddenCount} files
+                    {activeCount} active · {hiddenCount} files hidden
                   </span>
                 </div>
+                <p className="text-[10px] mb-3" style={{ color: 'var(--text-muted)' }}>
+                  Checked items are hidden from the file list.
+                </p>
 
-                {/* Min file length filter */}
+                {/* Min file length */}
                 <div
                   className="px-3 py-2.5 rounded-lg mb-3"
                   style={{ border: `1px solid ${minFileLength > 0 ? 'var(--accent)' : 'var(--border)'}`, background: minFileLength > 0 ? 'var(--active-bg)' : 'transparent' }}
@@ -173,37 +182,24 @@ export function PreferencesPanel({ open, onClose, onPresetsChanged }: Preference
                     </span>
                   </div>
                   <input
-                    type="range"
-                    min={0}
-                    max={5120}
-                    step={64}
-                    value={minFileLength}
+                    type="range" min={0} max={5120} step={64} value={minFileLength}
                     onChange={(e) => {
                       const val = Number(e.target.value);
                       setMinFileLength(val);
                       if (minFileLengthTimer.current) clearTimeout(minFileLengthTimer.current);
                       minFileLengthTimer.current = setTimeout(() => {
-                        fetch('/api/preferences', {
-                          method: 'POST',
-                          headers: { 'Content-Type': 'application/json' },
-                          body: JSON.stringify({ minFileLength: val }),
-                        }).then(() => onPresetsChanged()).catch(() => {});
+                        fetch('/api/preferences', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ minFileLength: val }) })
+                          .then(() => onPresetsChanged()).catch(() => {});
                       }, 300);
                     }}
-                    className="w-full"
-                    style={{ accentColor: 'var(--accent)', height: 4 }}
+                    className="w-full" style={{ accentColor: 'var(--accent)', height: 4 }}
                   />
-                  <p className="text-[10px] mt-1" style={{ color: 'var(--text-muted)' }}>
-                    Hide short files (stubs, empty docs, incidental files)
-                  </p>
                 </div>
 
-                {/* Generic presets */}
+                {/* Presets */}
                 {(() => {
                   const genericPresets = presets.filter(p => !p.id.startsWith('claude-'));
                   const claudePresets = presets.filter(p => p.id.startsWith('claude-'));
-                  const visibleGeneric = genericPresets;
-                  const visibleClaude = claudePresets;
 
                   const renderPreset = (preset: PresetInfo) => (
                     <button
@@ -232,7 +228,10 @@ export function PreferencesPanel({ open, onClose, onPresetsChanged }: Preference
                             {preset.label}
                           </span>
                           {preset.matchCount > 0 && (
-                            <span className="text-[10px] px-1.5 rounded" style={{ background: preset.active ? 'rgba(212,160,74,0.2)' : 'var(--hover-bg)', color: preset.active ? 'var(--accent)' : 'var(--text-muted)' }}>
+                            <span className="text-[10px] px-1.5 rounded" style={{
+                              background: preset.active ? 'rgba(212,160,74,0.2)' : 'var(--hover-bg)',
+                              color: preset.active ? 'var(--accent)' : 'var(--text-muted)',
+                            }}>
                               {preset.matchCount}
                             </span>
                           )}
@@ -244,124 +243,76 @@ export function PreferencesPanel({ open, onClose, onPresetsChanged }: Preference
 
                   return (
                     <>
-                      {visibleGeneric.length > 0 && (
+                      {genericPresets.length > 0 && (
                         <div className="mb-3">
                           <p className="text-[10px] uppercase tracking-wider mb-1.5" style={{ color: 'var(--text-muted)' }}>General</p>
-                          <div className="flex flex-col gap-1">{visibleGeneric.map(renderPreset)}</div>
+                          <div className="flex flex-col gap-1">{genericPresets.map(renderPreset)}</div>
                         </div>
                       )}
-                      {visibleClaude.length > 0 && (
+                      {claudePresets.length > 0 && (
                         <div>
                           <p className="text-[10px] uppercase tracking-wider mb-1.5" style={{ color: 'var(--text-muted)' }}>Claude Code</p>
-                          <div className="flex flex-col gap-1">{visibleClaude.map(renderPreset)}</div>
+                          <div className="flex flex-col gap-1">{claudePresets.map(renderPreset)}</div>
                         </div>
-                      )}
-                      {visibleGeneric.length === 0 && visibleClaude.length === 0 && (
-                        <p className="text-xs text-center py-3" style={{ color: 'var(--text-muted)' }}>No matching filters for your watched folders</p>
                       )}
                     </>
                   );
                 })()}
               </div>
 
-              {/* Watch directories section */}
+              {/* Watch directories */}
               <div className="px-5 py-4 border-t" style={{ borderColor: 'var(--border)' }}>
-                <h3
-                  className="text-xs font-medium uppercase tracking-wider mb-3"
-                  style={{ color: 'var(--text-muted)' }}
-                >
+                <h3 className="text-xs font-medium uppercase tracking-wider mb-3" style={{ color: 'var(--text-muted)' }}>
                   Watch Directories
                 </h3>
 
                 <div className="flex flex-col gap-1.5 mb-3">
-                  {watchDirs.map(dir => {
-                    const isCustom = customDirs.includes(dir);
+                  {allDirs.map(dir => {
+                    const isDisabled = disabledDirs.has(dir);
                     return (
                       <div
                         key={dir}
-                        className="flex items-center gap-2 px-3 py-1.5 rounded"
-                        style={{ background: 'var(--hover-bg)' }}
+                        className="flex items-center gap-2 px-3 py-1.5 rounded group"
+                        style={{ background: 'var(--hover-bg)', opacity: isDisabled ? 0.5 : 1 }}
                       >
                         <span
                           className="text-xs flex-1 truncate"
                           style={{
                             fontFamily: 'var(--font-jetbrains-mono), monospace',
-                            color: 'var(--text)',
+                            color: isDisabled ? 'var(--text-muted)' : 'var(--text)',
+                            textDecoration: isDisabled ? 'line-through' : 'none',
                           }}
                         >
                           {dir.replace(/^\/Users\/[^/]+/, '~')}
                         </span>
-                        {isCustom ? (
-                          <button
-                            className="text-[10px] px-1.5 py-0.5 rounded hover:bg-[var(--border)]"
-                            style={{ color: '#f87171' }}
-                            onClick={() => handleRemoveDir(dir)}
-                          >
-                            Remove
-                          </button>
-                        ) : (
-                          <span className="text-[10px]" style={{ color: 'var(--text-muted)' }}>
-                            default
-                          </span>
-                        )}
+                        <button
+                          className="text-[10px] px-1.5 py-0.5 rounded hover:bg-[var(--border)] transition-colors"
+                          style={{ color: isDisabled ? 'var(--accent)' : 'var(--text-muted)' }}
+                          onClick={() => handleToggleDir(dir)}
+                          title={isDisabled ? 'Re-enable this folder' : 'Temporarily hide files from this folder'}
+                        >
+                          {isDisabled ? 'Enable' : 'Disable'}
+                        </button>
+                        <button
+                          className="text-[10px] px-1.5 py-0.5 rounded hover:bg-[var(--border)] transition-colors"
+                          style={{ color: '#f87171' }}
+                          onClick={() => handleRemoveDir(dir)}
+                          title="Permanently remove this folder"
+                        >
+                          Remove
+                        </button>
                       </div>
                     );
                   })}
                 </div>
 
-                <div className="flex gap-2">
-                  <input
-                    type="text"
-                    placeholder="Add folder path (e.g. ~/Documents/notes)"
-                    value={newDir}
-                    onChange={(e) => setNewDir(e.target.value)}
-                    onKeyDown={(e) => { if (e.key === 'Enter') handleAddDir(); }}
-                    className="flex-1 px-2 py-1.5 text-xs rounded"
-                    style={{
-                      background: 'var(--bg)',
-                      color: 'var(--text)',
-                      border: '1px solid var(--border)',
-                      fontFamily: 'var(--font-jetbrains-mono), monospace',
-                      outline: 'none',
-                    }}
-                  />
-                  <button
-                    className="filter-pill active text-xs"
-                    onClick={handleAddDir}
-                    style={{ padding: '4px 12px' }}
-                  >
-                    Add
-                  </button>
-                </div>
-                <div className="flex items-center gap-2 mt-2">
-                  <button
-                    className="filter-pill text-xs"
-                    onClick={async () => {
-                      const electron = (window as unknown as { electron?: { selectFolder: () => Promise<string | null> } }).electron;
-                      if (electron?.selectFolder) {
-                        const dir = await electron.selectFolder();
-                        if (dir) {
-                          await fetch('/api/preferences', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ addWatchDir: dir }),
-                          });
-                          setCustomDirs(prev => [...prev, dir]);
-                          setWatchDirs(prev => [...prev, dir]);
-                        }
-                      } else {
-                        const input = document.querySelector<HTMLInputElement>('input[placeholder*="folder path"]');
-                        input?.focus();
-                      }
-                    }}
-                    style={{ padding: '4px 12px' }}
-                  >
-                    📂 Browse...
-                  </button>
-                  <p className="text-[10px]" style={{ color: 'var(--text-muted)' }}>
-                    Directories are watched immediately.
-                  </p>
-                </div>
+                <button
+                  className="filter-pill text-xs"
+                  onClick={handleBrowse}
+                  style={{ padding: '4px 12px' }}
+                >
+                  + Add Folder
+                </button>
               </div>
             </>
           )}

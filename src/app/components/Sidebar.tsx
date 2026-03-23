@@ -187,6 +187,9 @@ export function Sidebar({
                   selectedPath={selectedPath}
                   onSelectFile={onSelectFile}
                   onToggleStar={onToggleStar}
+                  favoriteFolders={favoriteFolders}
+                  folders={folders}
+                  onToggleFolderStar={onToggleFolderStar}
                 />
               )}
             </>

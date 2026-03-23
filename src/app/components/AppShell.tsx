@@ -613,7 +613,7 @@ export function AppShell() {
           const list = filteredFiles;
           if (list.length === 0) break;
           const currentIdx = selectedPath ? list.findIndex(f => f.path === selectedPath) : -1;
-          const down = e.key === 'j' || e.key === 'ArrowDown';
+          const down = e.key === 'k' || e.key === 'ArrowDown';
           const nextIdx = down
             ? Math.min(currentIdx + 1, list.length - 1)
             : Math.max(currentIdx - 1, 0);
@@ -813,16 +813,16 @@ export function AppShell() {
           <div
             style={{
               background: 'var(--surface)', border: '1px solid var(--border)',
-              borderRadius: 12, padding: '24px 32px', maxWidth: 420,
+              borderRadius: 16, padding: '36px 48px', maxWidth: 620,
               fontFamily: 'var(--font-jetbrains-mono), monospace',
             }}
             onClick={e => e.stopPropagation()}
           >
-            <h2 style={{ fontSize: 16, marginBottom: 16, color: 'var(--accent)' }}>Keyboard Shortcuts</h2>
-            <div style={{ display: 'grid', gridTemplateColumns: 'auto 1fr', gap: '8px 16px', fontSize: 12 }}>
+            <h2 style={{ fontSize: 28, marginBottom: 24, color: 'var(--accent)' }}>Keyboard Shortcuts</h2>
+            <div style={{ display: 'grid', gridTemplateColumns: 'auto 1fr', gap: '14px 24px', fontSize: 20 }}>
               {([
                 ['1 2 3', 'Switch sidebar view'],
-                ['j / k', 'Navigate files'],
+                ['j / k', 'Navigate files (up / down)'],
                 ['s', 'Star / unstar file'],
                 ['/', 'Focus search'],
                 ['Esc', 'Clear search'],
@@ -832,12 +832,11 @@ export function AppShell() {
                 ['Cmd + -', 'Zoom out'],
                 ['Cmd + 0', 'Reset zoom'],
                 ['Cmd + ,', 'Preferences'],
-                ['Cmd + Shift + O', 'Add folder (Electron)'],
                 ['?', 'Show this help'],
               ] as const).map(([key, desc]) => (
                 <div key={key} style={{ display: 'contents' }}>
                   <kbd style={{
-                    padding: '2px 6px', borderRadius: 4, fontSize: 11,
+                    padding: '4px 10px', borderRadius: 6, fontSize: 18,
                     background: 'var(--bg)', border: '1px solid var(--border)',
                     color: 'var(--accent)', textAlign: 'right', whiteSpace: 'nowrap',
                   }}>{key}</kbd>
