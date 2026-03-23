@@ -202,8 +202,8 @@ export function PreferencesPanel({ open, onClose, onPresetsChanged }: Preference
                 {(() => {
                   const genericPresets = presets.filter(p => !p.id.startsWith('claude-'));
                   const claudePresets = presets.filter(p => p.id.startsWith('claude-'));
-                  const visibleGeneric = genericPresets.filter(p => p.matchCount > 0 || p.active);
-                  const visibleClaude = claudePresets.filter(p => p.matchCount > 0 || p.active);
+                  const visibleGeneric = genericPresets;
+                  const visibleClaude = claudePresets;
 
                   const renderPreset = (preset: PresetInfo) => (
                     <button
@@ -212,6 +212,7 @@ export function PreferencesPanel({ open, onClose, onPresetsChanged }: Preference
                       style={{
                         background: preset.active ? 'var(--active-bg)' : 'transparent',
                         border: `1px solid ${preset.active ? 'var(--accent)' : 'var(--border)'}`,
+                        opacity: preset.matchCount === 0 && !preset.active ? 0.45 : 1,
                       }}
                       onClick={() => handleTogglePreset(preset.id)}
                     >
@@ -336,10 +337,9 @@ export function PreferencesPanel({ open, onClose, onPresetsChanged }: Preference
                   <button
                     className="filter-pill text-xs"
                     onClick={async () => {
-                      // Use Electron IPC if available, otherwise fall back to text input
-                      if (typeof window !== 'undefined' && (window as unknown as Record<string, unknown>).electronAPI) {
-                        const api = (window as unknown as Record<string, { selectFolder: () => Promise<string | null> }>).electronAPI;
-                        const dir = await api.selectFolder();
+                      const electron = (window as unknown as { electron?: { selectFolder: () => Promise<string | null> } }).electron;
+                      if (electron?.selectFolder) {
+                        const dir = await electron.selectFolder();
                         if (dir) {
                           await fetch('/api/preferences', {
                             method: 'POST',
@@ -347,9 +347,9 @@ export function PreferencesPanel({ open, onClose, onPresetsChanged }: Preference
                             body: JSON.stringify({ addWatchDir: dir }),
                           });
                           setCustomDirs(prev => [...prev, dir]);
+                          setWatchDirs(prev => [...prev, dir]);
                         }
                       } else {
-                        // Focus the text input as fallback
                         const input = document.querySelector<HTMLInputElement>('input[placeholder*="folder path"]');
                         input?.focus();
                       }

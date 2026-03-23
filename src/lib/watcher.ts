@@ -78,6 +78,11 @@ function getRelativePath(filePath: string): string {
 async function buildFileEntry(filePath: string): Promise<FileEntry> {
   const fileStat = await stat(filePath);
   const contentHash = await computeContentHash(filePath);
+  let lineCount: number | undefined;
+  try {
+    const content = fs.readFileSync(filePath, 'utf8');
+    lineCount = content.split('\n').length;
+  } catch { /* ignore unreadable files */ }
   return {
     path: filePath,
     name: path.basename(filePath, '.md'),
@@ -86,6 +91,7 @@ async function buildFileEntry(filePath: string): Promise<FileEntry> {
     modifiedAt: fileStat.mtimeMs,
     size: fileStat.size,
     contentHash,
+    lineCount,
   };
 }
 
@@ -246,6 +252,10 @@ export function getFilesForView(view: string): FileEntry[] {
   }
 }
 
+export function getWatchedDirs(): string[] {
+  return [...g.__mrWatchedDirs];
+}
+
 export function getFileEntry(filePath: string): FileEntry | undefined {
   return g.__mrRegistry.get(filePath);
 }
@@ -293,13 +303,6 @@ export async function refreshPresets(): Promise<void> {
       data: { totalFiles: g.__mrRegistry.size, filteredCount: getFilteredCount() },
     });
   }
-}
-
-/**
- * Get the list of currently watched directories.
- */
-export function getWatchedDirs(): string[] {
-  return [...g.__mrWatchedDirs];
 }
 
 /**

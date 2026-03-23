@@ -9,6 +9,7 @@ import {
   getWatchDirs,
   isFirstRun,
   saveSidebarView,
+  saveSidebarWidth,
   saveSidebarCollapsed,
   saveLastSelectedPath,
   saveExpandedGroups,
@@ -33,6 +34,7 @@ export async function POST(request: NextRequest) {
   const body = await request.json();
 
   if (body.sidebarView) await saveSidebarView(body.sidebarView as SidebarView);
+  if (body.sidebarWidth !== undefined) await saveSidebarWidth(body.sidebarWidth);
   if (body.sidebarCollapsed !== undefined) await saveSidebarCollapsed(body.sidebarCollapsed);
   if (body.lastSelectedPath !== undefined) await saveLastSelectedPath(body.lastSelectedPath);
   if (body.expandedGroups) await saveExpandedGroups(body.expandedGroups);

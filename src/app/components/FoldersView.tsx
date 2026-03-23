@@ -28,6 +28,18 @@ interface ContextMenuState {
   isExcluded: boolean;
 }
 
+// Indent constants
+const BASE_INDENT = 10;
+const INDENT_PER_DEPTH = 14;
+
+function folderIndent(depth: number) {
+  return BASE_INDENT + depth * INDENT_PER_DEPTH;
+}
+
+function fileIndent(depth: number) {
+  return BASE_INDENT + (depth + 1) * INDENT_PER_DEPTH;
+}
+
 function FolderGroup({
   node,
   depth,
@@ -41,7 +53,7 @@ function FolderGroup({
   onToggleExpand,
   excludedPaths,
   onContextMenu,
-  isCustomWatchDir,
+  isWatchRoot,
   onRemoveWatchDir,
 }: {
   node: FolderNode;
@@ -56,81 +68,83 @@ function FolderGroup({
   onToggleExpand: (folderPath: string) => void;
   excludedPaths: Set<string>;
   onContextMenu: (e: React.MouseEvent, folderPath: string, isExcluded: boolean) => void;
-  isCustomWatchDir?: boolean;
+  isWatchRoot?: boolean;
   onRemoveWatchDir?: (dir: string) => void;
 }) {
   const isExpanded = expandedGroups.has(node.path);
   const isFolderStarred = favoriteFolders.has(node.path);
   const isExcluded = excludedPaths.has(node.path);
+  const indent = folderIndent(depth);
 
-  // Sort children: favorite folders first, excluded last
-  const sortedChildren = [...node.children].sort((a, b) => {
-    const aExcluded = excludedPaths.has(a.path);
-    const bExcluded = excludedPaths.has(b.path);
-    if (aExcluded !== bExcluded) return aExcluded ? 1 : -1;
-    const aFav = favoriteFolders.has(a.path);
-    const bFav = favoriteFolders.has(b.path);
-    if (aFav !== bFav) return aFav ? -1 : 1;
-    return a.name.localeCompare(b.name);
-  });
+  // Sort children alphabetically
+  const sortedChildren = [...node.children].sort((a, b) => a.name.localeCompare(b.name));
+  const sortedFiles = [...node.files].sort((a, b) => a.name.localeCompare(b.name));
 
   return (
     <div className={isExcluded ? 'folder-excluded' : ''}>
+      {/* Folder header row */}
       <div
-        className="w-full flex items-center gap-1.5 px-3 py-1.5 text-left hover:bg-[var(--hover-bg)] transition-colors group cursor-pointer"
-        style={{ paddingLeft: `${12 + depth * 12}px` }}
+        className="w-full flex items-center gap-1.5 py-1 text-left hover:bg-[var(--hover-bg)] transition-colors group cursor-pointer"
+        style={{ paddingLeft: `${indent}px`, paddingRight: '8px' }}
         onClick={() => onToggleExpand(node.path)}
         onContextMenu={(e) => onContextMenu(e, node.path, isExcluded)}
       >
         <span
-          className="text-[10px] transition-transform"
+          className="text-[9px] shrink-0 transition-transform duration-150"
           style={{
             color: 'var(--text-muted)',
             transform: isExpanded ? 'rotate(90deg)' : 'rotate(0deg)',
+            display: 'inline-block',
           }}
         >
           ▶
         </span>
+
+        {/* Folder name */}
         <span
-          className="text-xs font-medium truncate flex-1"
+          className="flex-1 truncate text-xs"
           style={{
             fontFamily: 'var(--font-jetbrains-mono), monospace',
-            color: isExcluded ? 'var(--text-muted)' : 'var(--text-muted)',
+            fontWeight: depth === 0 ? 600 : 400,
+            color: isExcluded
+              ? 'var(--text-muted)'
+              : depth === 0
+                ? 'var(--text)'
+                : 'var(--text-muted)',
+            letterSpacing: depth === 0 ? '0.01em' : undefined,
           }}
         >
           {node.name}
         </span>
+
+        {/* File count badge */}
+        <span className="text-[10px] shrink-0 tabular-nums" style={{ color: 'var(--text-muted)', opacity: 0.6 }}>
+          {node.fileCount}
+        </span>
+
+        {/* Star button */}
         <button
           className={`star-btn text-[10px] opacity-0 group-hover:opacity-100 ${isFolderStarred ? 'starred opacity-100' : ''}`}
-          onClick={(e) => {
-            e.stopPropagation();
-            onToggleFolderStar(node.path);
-          }}
+          onClick={(e) => { e.stopPropagation(); onToggleFolderStar(node.path); }}
           title={isFolderStarred ? 'Unstar folder' : 'Star folder'}
         >
           {isFolderStarred ? '★' : '☆'}
         </button>
-        {isCustomWatchDir && onRemoveWatchDir && (
+
+        {/* Remove watch-root button */}
+        {isWatchRoot && onRemoveWatchDir && (
           <button
-            className="text-[10px] opacity-0 group-hover:opacity-100 px-1.5 py-0.5 rounded hover:bg-[var(--border)] transition-opacity"
+            className="text-[10px] opacity-0 group-hover:opacity-100 px-1.5 py-0.5 rounded transition-opacity"
             style={{ color: '#f87171' }}
-            onClick={(e) => {
-              e.stopPropagation();
-              onRemoveWatchDir(node.path);
-            }}
+            onClick={(e) => { e.stopPropagation(); onRemoveWatchDir(node.path); }}
             title="Stop watching this folder"
           >
-            ✕ Remove
+            ✕
           </button>
         )}
-        <span
-          className="text-[10px] shrink-0"
-          style={{ color: 'var(--text-muted)' }}
-        >
-          {node.fileCount}
-        </span>
       </div>
 
+      {/* Children — only when expanded and not excluded */}
       {isExpanded && !isExcluded && (
         <div>
           {sortedChildren.map(child => (
@@ -150,7 +164,7 @@ function FolderGroup({
               onContextMenu={onContextMenu}
             />
           ))}
-          {node.files.map(file => (
+          {sortedFiles.map(file => (
             <FileItem
               key={file.path}
               file={file}
@@ -158,6 +172,8 @@ function FolderGroup({
               starred={favorites.has(file.path)}
               onSelect={onSelectFile}
               onToggleStar={onToggleStar}
+              indentPx={fileIndent(depth)}
+              hideProject
             />
           ))}
         </div>
@@ -190,7 +206,6 @@ export function FoldersView({
     setContextMenu({ x: e.clientX, y: e.clientY, folderPath, isExcluded });
   }, []);
 
-  // Close context menu on click elsewhere
   useEffect(() => {
     if (!contextMenu) return;
     const handler = (e: MouseEvent) => {
@@ -202,17 +217,6 @@ export function FoldersView({
     return () => document.removeEventListener('mousedown', handler);
   }, [contextMenu]);
 
-  // Sort root folders: favorites first, excluded last
-  const sortedFolders = [...folders].sort((a, b) => {
-    const aExcluded = excludedPaths.has(a.path);
-    const bExcluded = excludedPaths.has(b.path);
-    if (aExcluded !== bExcluded) return aExcluded ? 1 : -1;
-    const aFav = favoriteFolders.has(a.path);
-    const bFav = favoriteFolders.has(b.path);
-    if (aFav !== bFav) return aFav ? -1 : 1;
-    return a.name.localeCompare(b.name);
-  });
-
   if (folders.length === 0) {
     return (
       <div className="p-4 text-center" style={{ color: 'var(--text-muted)' }}>
@@ -223,7 +227,7 @@ export function FoldersView({
 
   return (
     <div className="py-1">
-      {sortedFolders.map(folder => (
+      {folders.map(folder => (
         <FolderGroup
           key={folder.path}
           node={folder}
@@ -238,35 +242,24 @@ export function FoldersView({
           onToggleExpand={onToggleExpand}
           excludedPaths={excludedPaths}
           onContextMenu={handleContextMenu}
-          isCustomWatchDir={customWatchDirs.includes(folder.path)}
+          isWatchRoot={customWatchDirs.includes(folder.path)}
           onRemoveWatchDir={onRemoveWatchDir}
         />
       ))}
 
-      {/* Context menu */}
       {contextMenu && (
-        <div
-          ref={menuRef}
-          className="context-menu"
-          style={{ left: contextMenu.x, top: contextMenu.y }}
-        >
+        <div ref={menuRef} className="context-menu" style={{ left: contextMenu.x, top: contextMenu.y }}>
           {contextMenu.isExcluded ? (
             <button
               className="context-menu-item"
-              onClick={() => {
-                onIncludeFolder(contextMenu.folderPath);
-                setContextMenu(null);
-              }}
+              onClick={() => { onIncludeFolder(contextMenu.folderPath); setContextMenu(null); }}
             >
               ✓ Include this folder
             </button>
           ) : (
             <button
               className="context-menu-item destructive"
-              onClick={() => {
-                onExcludeFolder(contextMenu.folderPath);
-                setContextMenu(null);
-              }}
+              onClick={() => { onExcludeFolder(contextMenu.folderPath); setContextMenu(null); }}
             >
               ✕ Exclude this folder
             </button>

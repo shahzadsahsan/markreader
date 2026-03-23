@@ -21,6 +21,8 @@ export function AppShell() {
   // Sidebar state
   const [sidebarView, setSidebarView] = useState<SidebarView>('recents');
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [sidebarWidth, setSidebarWidth] = useState(280);
+  const sidebarWidthRef = useRef(280);
   const [favorites, setFavorites] = useState<Set<string>>(new Set());
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -59,12 +61,12 @@ export function AppShell() {
   // Shortcuts cheat sheet
   const [showShortcuts, setShowShortcuts] = useState(false);
 
-  // Zoom & reader mode
+  // Zoom & display
   const ZOOM_STEPS = [0.85, 1, 1.25, 1.5, 2];
   const [zoomLevel, setZoomLevel] = useState(1);
   const [fillScreen, setFillScreen] = useState(false);
-  const [readerMode, setReaderMode] = useState(false);
   const [activePalette, setActivePalette] = useState<PaletteId>('parchment-dusk');
+  const [minLines, setMinLines] = useState(20);
   const mainRef = useRef<HTMLElement>(null);
 
   // --- Restore persisted UI state on mount ---
@@ -75,6 +77,10 @@ export function AppShell() {
         if (data.ui) {
           setSidebarView(data.ui.sidebarView || 'recents');
           setSidebarCollapsed(data.ui.sidebarCollapsed || false);
+          if (data.ui.sidebarWidth) {
+            setSidebarWidth(data.ui.sidebarWidth);
+            sidebarWidthRef.current = data.ui.sidebarWidth;
+          }
           if (data.ui.lastSelectedPath) {
             setSelectedPath(data.ui.lastSelectedPath);
           }
@@ -117,16 +123,20 @@ export function AppShell() {
     return () => clearTimeout(t);
   }, [searchQuery]);
 
-  // --- Filter files by search query ---
+  // --- Filter files by search query + minLines ---
   const filteredFiles = useMemo(() => {
-    if (!debouncedSearch.trim()) return files;
+    let result = files;
+    if (minLines > 0) {
+      result = result.filter(f => f.lineCount === undefined || f.lineCount >= minLines);
+    }
+    if (!debouncedSearch.trim()) return result;
     const q = debouncedSearch.toLowerCase();
-    return files.filter(f =>
+    return result.filter(f =>
       f.name.toLowerCase().includes(q) ||
       f.project.toLowerCase().includes(q) ||
       f.relativePath.toLowerCase().includes(q)
     );
-  }, [files, debouncedSearch]);
+  }, [files, debouncedSearch, minLines]);
 
   // --- Fetch files for current view ---
   const fetchFiles = useCallback(async (view?: SidebarView) => {
@@ -359,6 +369,36 @@ export function AppShell() {
     });
   }, []);
 
+  // --- Sidebar resize drag ---
+  const startSidebarDrag = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    const startX = e.clientX;
+    const startWidth = sidebarWidthRef.current;
+
+    const onMove = (ev: MouseEvent) => {
+      const newWidth = Math.max(180, Math.min(520, startWidth + ev.clientX - startX));
+      sidebarWidthRef.current = newWidth;
+      setSidebarWidth(newWidth);
+    };
+
+    const onUp = () => {
+      document.removeEventListener('mousemove', onMove);
+      document.removeEventListener('mouseup', onUp);
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+      fetch('/api/ui', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sidebarWidth: sidebarWidthRef.current }),
+      }).catch(() => {});
+    };
+
+    document.body.style.cursor = 'col-resize';
+    document.body.style.userSelect = 'none';
+    document.addEventListener('mousemove', onMove);
+    document.addEventListener('mouseup', onUp);
+  }, []);
+
   // --- Flush SSE batch buffer ---
   const flushPendingFiles = useCallback(() => {
     if (pendingFilesRef.current.length === 0) return;
@@ -517,35 +557,10 @@ export function AppShell() {
     });
   }, []);
 
-  const toggleReaderMode = useCallback(() => {
-    setReaderMode(prev => !prev);
-  }, []);
-
   const changePalette = useCallback((id: PaletteId) => {
     setActivePalette(id);
     fetch('/api/ui', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ palette: id }) }).catch(() => {});
   }, []);
-
-  // --- Reader mode auto-exit on mouse to sidebar edge (with grace period) ---
-  useEffect(() => {
-    if (!readerMode) return;
-    // Grace period: ignore mouse movements for 600ms after entering reader mode
-    // so the user can move their mouse away from the toggle button
-    let armed = false;
-    const armTimer = setTimeout(() => { armed = true; }, 600);
-    const handleMouseMove = (e: MouseEvent) => {
-      if (!armed) return;
-      // Only exit when mouse hits the far-left edge (sidebar zone)
-      if (e.clientX < 8) {
-        setReaderMode(false);
-      }
-    };
-    document.addEventListener('mousemove', handleMouseMove, { passive: true });
-    return () => {
-      clearTimeout(armTimer);
-      document.removeEventListener('mousemove', handleMouseMove);
-    };
-  }, [readerMode]);
 
   // --- Keyboard shortcuts ---
   useEffect(() => {
@@ -564,13 +579,13 @@ export function AppShell() {
         if (e.key === '=' || e.key === '+') { e.preventDefault(); zoomIn(); return; }
         if (e.key === '-') { e.preventDefault(); zoomOut(); return; }
         if (e.key === '0') { e.preventDefault(); zoomReset(); return; }
-        if (e.key === '.' ) { e.preventDefault(); toggleReaderMode(); return; }
+        if (e.key === ',') { e.preventDefault(); setPrefsOpen(true); return; }
+        if (e.key === 's' || e.key === 'S') { e.preventDefault(); toggleCollapse(); return; }
         if (e.shiftKey && (e.key === 'f' || e.key === 'F')) { e.preventDefault(); toggleFillScreen(); return; }
       }
 
       switch (e.key) {
         case 'Escape': {
-          if (readerMode) { setReaderMode(false); break; }
           setSearchQuery('');
           break;
         }
@@ -582,7 +597,6 @@ export function AppShell() {
         case '1': changeView('recents'); break;
         case '2': changeView('folders'); break;
         case '3': changeView('favorites'); break;
-        case '4': changeView('history'); break;
         case 's': {
           if (selectedPath) toggleStar(selectedPath);
           break;
@@ -617,7 +631,7 @@ export function AppShell() {
 
     document.addEventListener('keydown', handleKey);
     return () => document.removeEventListener('keydown', handleKey);
-  }, [changeView, toggleStar, selectFile, selectedPath, filteredFiles, zoomIn, zoomOut, zoomReset, toggleFillScreen, toggleReaderMode, readerMode]);
+  }, [changeView, toggleStar, selectFile, selectedPath, filteredFiles, zoomIn, zoomOut, zoomReset, toggleFillScreen, toggleCollapse]);
 
   // Welcome screen is now triggered by firstRun flag from /api/ui (state.json didn't exist)
 
@@ -706,8 +720,19 @@ export function AppShell() {
     );
   }
 
+  const paletteStyle = useMemo(() => {
+    const p = PALETTES.find(pl => pl.id === activePalette);
+    if (!p) return { background: 'var(--bg)' } as React.CSSProperties;
+    const s: Record<string, string> = {};
+    for (const [k, v] of Object.entries(p.vars)) s[k] = v;
+    s.backgroundColor = p.vars['--bg'];
+    s.color = p.vars['--text'];
+    s.transition = 'background-color 0.4s ease, color 0.4s ease';
+    return s as React.CSSProperties;
+  }, [activePalette]);
+
   return (
-    <div className={`flex flex-col h-screen overflow-hidden ${readerMode ? 'reader-mode' : ''}`} style={{ background: 'var(--bg)' }}>
+    <div className="flex flex-col h-screen overflow-hidden" style={paletteStyle}>
       <div className="flex flex-1 overflow-hidden">
         <div className="sidebar-wrapper">
           <Sidebar
@@ -722,6 +747,7 @@ export function AppShell() {
             collapsed={sidebarCollapsed}
             onToggleCollapse={toggleCollapse}
             loading={loading}
+            width={sidebarWidth}
             favoriteFolders={favoriteFolders}
             onToggleFolderStar={toggleFolderStar}
             expandedGroups={expandedGroups}
@@ -737,22 +763,13 @@ export function AppShell() {
           />
         </div>
 
+        {!sidebarCollapsed && (
+          <div className="sidebar-resize-handle" onMouseDown={startSidebarDrag} />
+        )}
+
         <main
           ref={mainRef}
           className="flex-1 overflow-y-auto content-area"
-          style={(() => {
-            const p = PALETTES.find(pl => pl.id === activePalette);
-            if (!p) return { background: 'var(--bg)' } as React.CSSProperties;
-            // Set all palette CSS custom properties + direct bg/color for immediate effect
-            const s: Record<string, string> = {};
-            for (const [k, v] of Object.entries(p.vars)) {
-              s[k] = v;
-            }
-            s.backgroundColor = p.vars['--bg'];
-            s.color = p.vars['--text'];
-            s.transition = 'background-color 0.4s ease, color 0.4s ease';
-            return s as React.CSSProperties;
-          })()}
         >
           <MarkdownPreview
             fileContent={fileContent}
@@ -762,12 +779,10 @@ export function AppShell() {
             knownPaths={knownPaths}
             zoomLevel={zoomLevel}
             fillScreen={fillScreen}
-            readerMode={readerMode}
             onZoomIn={zoomIn}
             onZoomOut={zoomOut}
             onZoomReset={zoomReset}
             onToggleFillScreen={toggleFillScreen}
-            onToggleReaderMode={toggleReaderMode}
             activePalette={activePalette}
             onChangePalette={changePalette}
           />
@@ -781,6 +796,8 @@ export function AppShell() {
           connectionStatus={connectionStatus}
           scanComplete={scanComplete}
           onOpenPreferences={() => setPrefsOpen(true)}
+          minLines={minLines}
+          onChangeMinLines={setMinLines}
         />
       </div>
 
@@ -804,16 +821,17 @@ export function AppShell() {
             <h2 style={{ fontSize: 16, marginBottom: 16, color: 'var(--accent)' }}>Keyboard Shortcuts</h2>
             <div style={{ display: 'grid', gridTemplateColumns: 'auto 1fr', gap: '8px 16px', fontSize: 12 }}>
               {([
-                ['1 2 3 4', 'Switch sidebar view'],
+                ['1 2 3', 'Switch sidebar view'],
                 ['j / k', 'Navigate files'],
                 ['s', 'Star / unstar file'],
                 ['/', 'Focus search'],
-                ['Esc', 'Clear search / exit focus'],
-                ['Cmd + .', 'Toggle focus mode'],
+                ['Esc', 'Clear search'],
+                ['Cmd + S', 'Hide / show sidebar'],
                 ['Cmd + Shift + F', 'Toggle fill screen'],
                 ['Cmd + =', 'Zoom in'],
                 ['Cmd + -', 'Zoom out'],
                 ['Cmd + 0', 'Reset zoom'],
+                ['Cmd + ,', 'Preferences'],
                 ['Cmd + Shift + O', 'Add folder (Electron)'],
                 ['?', 'Show this help'],
               ] as const).map(([key, desc]) => (

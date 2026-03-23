@@ -2,58 +2,71 @@
 // Returns the file list for the requested sidebar view.
 
 import { NextRequest, NextResponse } from 'next/server';
-import { getFilesForView, getFileRegistry, isScanComplete } from '@/lib/watcher';
+import { getFilesForView, getFileRegistry, isScanComplete, getWatchedDirs } from '@/lib/watcher';
 import { getFavorites, getHistory } from '@/lib/state';
 import type { FileEntry, FolderNode } from '@/lib/types';
+import os from 'os';
+import path from 'path';
 
-function buildFolderTree(files: FileEntry[]): FolderNode[] {
-  const roots = new Map<string, FolderNode>();
+/**
+ * Build a true directory tree rooted at each watch dir.
+ * Each node's `path` is the full absolute filesystem path,
+ * so the Remove button and other path comparisons work correctly.
+ */
+function buildFolderTree(files: FileEntry[], watchedDirs: string[]): FolderNode[] {
+  const homeDir = os.homedir();
+  const nodeMap = new Map<string, FolderNode>();
 
-  for (const file of files) {
-    const parts = file.relativePath.split('/');
-    const project = parts[0] || file.project;
-
-    if (!roots.has(project)) {
-      roots.set(project, {
-        name: project,
-        path: project,
-        files: [],
-        children: [],
-        fileCount: 0,
-      });
-    }
-
-    const root = roots.get(project)!;
-    root.fileCount++;
-
-    if (parts.length <= 2) {
-      // File directly in project root or one level deep
-      root.files.push(file);
-    } else {
-      // Nested file — create intermediate folders
-      let current = root;
-      for (let i = 1; i < parts.length - 1; i++) {
-        const folderName = parts[i];
-        let child = current.children.find(c => c.name === folderName);
-        if (!child) {
-          child = {
-            name: folderName,
-            path: parts.slice(0, i + 1).join('/'),
-            files: [],
-            children: [],
-            fileCount: 0,
-          };
-          current.children.push(child);
-        }
-        child.fileCount++;
-        current = child;
-      }
-      current.files.push(file);
-    }
+  // Create root nodes for each watched directory
+  for (const dir of watchedDirs) {
+    const displayName = dir.startsWith(homeDir)
+      ? '~' + dir.slice(homeDir.length)
+      : dir;
+    nodeMap.set(dir, { name: displayName, path: dir, files: [], children: [], fileCount: 0 });
   }
 
-  // Sort roots alphabetically
-  return Array.from(roots.values()).sort((a, b) => a.name.localeCompare(b.name));
+  for (const file of files) {
+    // Find the deepest watch dir that contains this file
+    const watchDir = watchedDirs
+      .filter(d => file.path.startsWith(d + path.sep) || file.path.startsWith(d + '/'))
+      .sort((a, b) => b.length - a.length)[0];
+    if (!watchDir) continue;
+
+    const rel = file.path.slice(watchDir.length + 1);
+    const parts = rel.split('/');
+
+    let currentPath = watchDir;
+    let currentNode = nodeMap.get(watchDir)!;
+    currentNode.fileCount++;
+
+    // Walk/create intermediate directory nodes
+    for (let i = 0; i < parts.length - 1; i++) {
+      const childPath = currentPath + '/' + parts[i];
+      if (!nodeMap.has(childPath)) {
+        const child: FolderNode = {
+          name: parts[i],
+          path: childPath,
+          files: [],
+          children: [],
+          fileCount: 0,
+        };
+        nodeMap.set(childPath, child);
+        currentNode.children.push(child);
+      }
+      const child = nodeMap.get(childPath)!;
+      child.fileCount++;
+      currentPath = childPath;
+      currentNode = child;
+    }
+
+    currentNode.files.push(file);
+  }
+
+  // Return only roots that have content
+  return watchedDirs
+    .map(d => nodeMap.get(d))
+    .filter((n): n is FolderNode => n !== undefined && n.fileCount > 0)
+    .sort((a, b) => a.name.localeCompare(b.name));
 }
 
 export async function GET(request: NextRequest) {
@@ -75,7 +88,7 @@ export async function GET(request: NextRequest) {
       break;
 
     case 'folders':
-      response.folders = buildFolderTree(getFilesForView('folders'));
+      response.folders = buildFolderTree(getFilesForView('folders'), getWatchedDirs());
       break;
 
     case 'favorites': {
@@ -94,7 +107,6 @@ export async function GET(request: NextRequest) {
         .map(h => {
           const entry = registry.get(h.path);
           if (!entry) return null;
-          // Attach lastOpenedAt for display
           return { ...entry, lastOpenedAt: h.lastOpenedAt };
         })
         .filter((f): f is FileEntry & { lastOpenedAt: number } => f !== null);

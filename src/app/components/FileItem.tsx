@@ -9,13 +9,12 @@ interface FileItemProps {
   starred: boolean;
   onSelect: (path: string) => void;
   onToggleStar: (path: string) => void;
-  timeField?: number; // Override timestamp (e.g., lastOpenedAt for history)
-  timeLabel?: string; // Override label (e.g., "opened" for history)
+  timeField?: number;
+  timeLabel?: string;
+  indentPx?: number;    // Extra left padding for tree hierarchy
+  hideProject?: boolean; // Suppress project badge (redundant in folder tree)
 }
 
-/**
- * Format a timestamp as a relative time string.
- */
 function formatRelativeTime(epochMs: number): string {
   const diff = Date.now() - epochMs;
   const seconds = Math.floor(diff / 1000);
@@ -31,7 +30,6 @@ function formatRelativeTime(epochMs: number): string {
   return `${Math.floor(days / 30)}mo ago`;
 }
 
-// Mitigation #8: React.memo prevents re-render of 610 items on every SSE event
 export const FileItem = memo(function FileItem({
   file,
   selected,
@@ -40,6 +38,8 @@ export const FileItem = memo(function FileItem({
   onToggleStar,
   timeField,
   timeLabel,
+  indentPx,
+  hideProject,
 }: FileItemProps) {
   const timestamp = timeField || file.modifiedAt;
   const label = timeLabel || '';
@@ -49,37 +49,31 @@ export const FileItem = memo(function FileItem({
       className={`file-item ${selected ? 'active' : ''}`}
       data-selected={selected || undefined}
       onClick={() => onSelect(file.path)}
+      style={indentPx !== undefined ? { paddingLeft: `${indentPx}px` } : undefined}
     >
       <div className="flex items-start justify-between gap-2">
         <div className="flex-1 min-w-0">
           <div
             className="text-sm font-medium truncate"
-            style={{
-              fontFamily: 'var(--font-jetbrains-mono), monospace',
-              color: selected ? 'var(--text)' : 'var(--text)',
-            }}
+            style={{ fontFamily: 'var(--font-jetbrains-mono), monospace', color: 'var(--text)' }}
           >
             {file.name}
           </div>
-          <div
-            className="text-xs mt-0.5 flex items-center gap-1.5"
-            style={{ color: 'var(--text-muted)' }}
-          >
-            <span
-              className="px-1 py-0.5 rounded text-[10px]"
-              style={{ background: 'var(--active-bg)', color: 'var(--text-muted)' }}
-            >
-              {file.project}
-            </span>
-            <span>{label}{formatRelativeTime(timestamp)}</span>
+          <div className="text-xs mt-0.5 flex items-center gap-1.5" style={{ color: 'var(--text-muted)' }}>
+            {!hideProject && (
+              <span
+                className="px-1 py-0.5 rounded text-[10px] shrink-0"
+                style={{ background: 'var(--active-bg)', color: 'var(--text-muted)' }}
+              >
+                {file.project}
+              </span>
+            )}
+            <span className="truncate">{label}{formatRelativeTime(timestamp)}</span>
           </div>
         </div>
         <button
-          className={`star-btn ${starred ? 'starred' : ''}`}
-          onClick={(e) => {
-            e.stopPropagation();
-            onToggleStar(file.path);
-          }}
+          className={`star-btn shrink-0 ${starred ? 'starred' : ''}`}
+          onClick={(e) => { e.stopPropagation(); onToggleStar(file.path); }}
           title={starred ? 'Remove star' : 'Star file'}
         >
           {starred ? '★' : '☆'}

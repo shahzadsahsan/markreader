@@ -4,7 +4,6 @@ import type { FileEntry, SidebarView, FolderNode } from '@/lib/types';
 import { RecentsView } from './RecentsView';
 import { FoldersView } from './FoldersView';
 import { FavoritesView } from './FavoritesView';
-import { HistoryView } from './HistoryView';
 import type { RefObject } from 'react';
 
 interface SidebarProps {
@@ -19,6 +18,7 @@ interface SidebarProps {
   collapsed: boolean;
   onToggleCollapse: () => void;
   loading: boolean;
+  width: number;
   // V2 props
   favoriteFolders: Set<string>;
   onToggleFolderStar: (folderPath: string) => void;
@@ -37,8 +37,7 @@ interface SidebarProps {
 const TABS: { view: SidebarView; icon: string; label: string; shortcut: string }[] = [
   { view: 'recents', icon: '⏱', label: 'Recents', shortcut: '1' },
   { view: 'folders', icon: '📁', label: 'Folders', shortcut: '2' },
-  { view: 'favorites', icon: '⭐', label: 'Favorites', shortcut: '3' },
-  { view: 'history', icon: '📖', label: 'History', shortcut: '4' },
+  { view: 'favorites', icon: '⭐', label: 'Faves', shortcut: '3' },
 ];
 
 function SkeletonList() {
@@ -66,6 +65,7 @@ export function Sidebar({
   collapsed,
   onToggleCollapse,
   loading,
+  width,
   favoriteFolders,
   onToggleFolderStar,
   expandedGroups,
@@ -83,7 +83,9 @@ export function Sidebar({
     <aside
       className="flex flex-col border-r h-full shrink-0 transition-all duration-200"
       style={{
-        width: collapsed ? '48px' : 'var(--sidebar-width)',
+        width: collapsed ? 48 : width,
+        minWidth: collapsed ? 48 : width,
+        maxWidth: collapsed ? 48 : width,
         borderColor: 'var(--border)',
         background: 'var(--surface)',
       }}
@@ -187,23 +189,15 @@ export function Sidebar({
                   onToggleStar={onToggleStar}
                 />
               )}
-              {view === 'history' && (
-                <HistoryView
-                  files={files}
-                  selectedPath={selectedPath}
-                  onSelectFile={onSelectFile}
-                  onToggleStar={onToggleStar}
-                  favorites={favorites}
-                />
-              )}
             </>
           )}
         </div>
       )}
 
-      {/* Collapse toggle */}
+      {/* Collapse toggle — bottom when collapsed, below content when expanded */}
+      {collapsed && <div className="flex-1" />}
       <button
-        className="tab-btn mx-auto my-2 text-xs"
+        className="tab-btn mx-auto mb-2 mt-2 text-xs"
         onClick={onToggleCollapse}
         title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
         style={{ fontSize: '14px' }}

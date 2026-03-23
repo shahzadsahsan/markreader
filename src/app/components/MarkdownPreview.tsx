@@ -190,12 +190,10 @@ interface MarkdownPreviewProps {
   knownPaths: Set<string>;
   zoomLevel: number;
   fillScreen: boolean;
-  readerMode: boolean;
   onZoomIn: () => void;
   onZoomOut: () => void;
   onZoomReset: () => void;
   onToggleFillScreen: () => void;
-  onToggleReaderMode: () => void;
   activePalette: PaletteId;
   onChangePalette: (id: PaletteId) => void;
 }
@@ -234,8 +232,8 @@ function ContentSkeleton() {
 
 export function MarkdownPreview({
   fileContent, loading, onToggleStar, onSelectFile, knownPaths,
-  zoomLevel, fillScreen, readerMode,
-  onZoomIn, onZoomOut, onZoomReset, onToggleFillScreen, onToggleReaderMode,
+  zoomLevel, fillScreen,
+  onZoomIn, onZoomOut, onZoomReset, onToggleFillScreen,
   activePalette, onChangePalette,
 }: MarkdownPreviewProps) {
   const [showFullPath, setShowFullPath] = useState(false);
@@ -454,35 +452,6 @@ export function MarkdownPreview({
 
   return (
     <div>
-      {/* Reader mode exit button */}
-      {readerMode && (
-        <button
-          onClick={onToggleReaderMode}
-          style={{
-            position: 'fixed',
-            top: 16,
-            right: 16,
-            padding: '4px 12px',
-            fontSize: 11,
-            fontFamily: 'var(--font-jetbrains-mono), monospace',
-            color: 'var(--text-muted)',
-            background: 'rgba(22, 22, 22, 0.8)',
-            border: '1px solid var(--border)',
-            borderRadius: 20,
-            cursor: 'pointer',
-            opacity: 0.3,
-            transition: 'opacity 0.2s',
-            zIndex: 100,
-            backdropFilter: 'blur(8px)',
-          }}
-          onMouseEnter={e => (e.currentTarget.style.opacity = '1')}
-          onMouseLeave={e => (e.currentTarget.style.opacity = '0.3')}
-          title="Exit focus mode (Esc)"
-        >
-          Exit Focus
-        </button>
-      )}
-
       {/* File header */}
       <div
         className="file-header sticky top-0 z-10 px-6 py-3 border-b backdrop-blur-sm"
@@ -545,16 +514,6 @@ export function MarkdownPreview({
               <span>⛶</span><span>Fill</span>
             </button>
 
-            {/* Reader mode toggle */}
-            <button
-              className="zoom-btn"
-              onClick={onToggleReaderMode}
-              title="Reader mode (Cmd+.)"
-              style={{ display: 'flex', alignItems: 'center', gap: 3, ...(readerMode ? { borderColor: 'var(--accent)', color: 'var(--accent)' } : {}) }}
-            >
-              <span>◉</span><span>Focus</span>
-            </button>
-
             {/* Palette picker */}
             <button
               ref={paletteBtnRef}
@@ -578,7 +537,7 @@ export function MarkdownPreview({
       </div>
 
       {/* Heading breadcrumb — hidden in reader mode */}
-      {headingBreadcrumb && !readerMode && (
+      {headingBreadcrumb && (
         <div
           className="sticky z-10 px-6 py-1"
           style={{

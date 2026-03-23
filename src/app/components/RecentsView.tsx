@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo } from 'react'; // useMemo kept for filteredFiles
 import type { FileEntry } from '@/lib/types';
 import { FileItem } from './FileItem';
 
@@ -12,12 +12,12 @@ interface RecentsViewProps {
   favorites: Set<string>;
 }
 
-type TimeFilter = 'all' | '1h' | '24h' | '7d';
+type TimeFilter = 'all' | '1h' | '3h' | '24h';
 
 const TIME_FILTERS: { key: TimeFilter; label: string; ms: number }[] = [
   { key: '1h', label: '1h', ms: 60 * 60 * 1000 },
+  { key: '3h', label: '3h', ms: 3 * 60 * 60 * 1000 },
   { key: '24h', label: '24h', ms: 24 * 60 * 60 * 1000 },
-  { key: '7d', label: '7d', ms: 7 * 24 * 60 * 60 * 1000 },
   { key: 'all', label: 'All', ms: 0 },
 ];
 
@@ -30,18 +30,6 @@ export function RecentsView({
 }: RecentsViewProps) {
   const [timeFilter, setTimeFilter] = useState<TimeFilter>('all');
 
-  // Compute counts per time range for badge display
-  const filterCounts = useMemo(() => {
-    const now = Date.now();
-    const counts: Record<TimeFilter, number> = { all: files.length, '1h': 0, '24h': 0, '7d': 0 };
-    for (const f of files) {
-      const age = now - f.modifiedAt;
-      if (age < 60 * 60 * 1000) counts['1h']++;
-      if (age < 24 * 60 * 60 * 1000) counts['24h']++;
-      if (age < 7 * 24 * 60 * 60 * 1000) counts['7d']++;
-    }
-    return counts;
-  }, [files]);
 
   const filteredFiles = useMemo(() => {
     if (timeFilter === 'all') return files;
@@ -64,16 +52,8 @@ export function RecentsView({
             onClick={() => setTimeFilter(f.key)}
           >
             {f.label}
-            {filterCounts[f.key] > 0 && f.key !== 'all' && (
-              <span className="ml-1 opacity-60">({filterCounts[f.key]})</span>
-            )}
           </button>
         ))}
-        {timeFilter !== 'all' && (
-          <span className="text-[10px] ml-auto" style={{ color: 'var(--text-muted)' }}>
-            {filteredFiles.length} of {files.length}
-          </span>
-        )}
       </div>
 
       {filteredFiles.length === 0 ? (

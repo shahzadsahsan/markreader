@@ -1,6 +1,6 @@
 // MarkReader — Core Types
 
-export type SidebarView = 'recents' | 'folders' | 'favorites' | 'history';
+export type SidebarView = 'recents' | 'folders' | 'favorites';
 
 export interface FileEntry {
   path: string;           // Absolute file path
@@ -10,6 +10,7 @@ export interface FileEntry {
   modifiedAt: number;     // mtime as epoch ms
   size: number;           // File size in bytes
   contentHash: string;    // SHA-256 of first 1KB + size (for move tracking)
+  lineCount?: number;     // Number of lines in the file
 }
 
 export interface FavoriteEntry {

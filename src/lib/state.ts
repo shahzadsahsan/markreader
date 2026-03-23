@@ -188,6 +188,12 @@ export async function saveSidebarView(view: SidebarView): Promise<void> {
   await enqueueWrite(saveState);
 }
 
+export async function saveSidebarWidth(width: number): Promise<void> {
+  const state = await loadState();
+  state.ui.sidebarWidth = width;
+  await enqueueWrite(saveState);
+}
+
 export async function saveSidebarCollapsed(collapsed: boolean): Promise<void> {
   const state = await loadState();
   state.ui.sidebarCollapsed = collapsed;
