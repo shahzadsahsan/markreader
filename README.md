@@ -2,7 +2,7 @@
 
 **See what your AI agent just built.**
 
-![macOS](https://img.shields.io/badge/platform-macOS-black) ![Next.js](https://img.shields.io/badge/Next.js-16-black) ![Electron](https://img.shields.io/badge/Electron-34-black) ![License](https://img.shields.io/badge/license-MIT-black)
+![macOS](https://img.shields.io/badge/platform-macOS-black) ![Tauri](https://img.shields.io/badge/Tauri-2.0-black) ![Rust](https://img.shields.io/badge/Rust-backend-black) ![License](https://img.shields.io/badge/license-MIT-black)
 
 <img width="412" height="416" alt="markscout app icon" src="https://github.com/user-attachments/assets/469278db-01ba-4a43-b9db-ffe0e9e2d679" />
 
@@ -36,19 +36,18 @@ Built for anyone who works with AI coding agents (Claude Code, Codex, Cursor, Wi
 
 Grab the latest `.dmg` from [**Releases**](https://github.com/shahzadsahsan/markscout/releases).
 
+**v0.4.0**: 11 MB DMG, 18 MB app (down from 160 MB / 500 MB with Electron).
+
 ### First Launch — Bypassing macOS Gatekeeper
 
-The app is unsigned (code signing coming soon). macOS will block it on first open. Here's how to get past that:
+The app is unsigned (code signing coming soon). macOS will block it on first open:
 
 1. **Open the DMG** and drag MarkScout to `/Applications`
-2. **Double-click MarkScout.app** — macOS will show "MarkScout can't be opened because Apple cannot check it for malicious software"
-3. **Click "Done"** (not "Move to Trash")
-4. **Open System Settings → Privacy & Security** — scroll down and you'll see a message: *"MarkScout was blocked from use because it is not from an identified developer"*
-5. **Click "Open Anyway"** — enter your password when prompted
-6. A final dialog asks if you're sure — **click "Open"**
-7. MarkScout launches. You only need to do this once.
+2. **Double-click MarkScout.app** — macOS will block it
+3. **Open System Settings → Privacy & Security** — click "Open Anyway"
+4. MarkScout launches. You only need to do this once.
 
-> **Shortcut**: Right-click (or Control-click) MarkScout.app → "Open" → click "Open" in the dialog. This sometimes works without the System Settings step.
+> **Shortcut**: Right-click MarkScout.app → "Open" → click "Open" in the dialog.
 
 ## Keyboard Shortcuts
 
@@ -59,7 +58,8 @@ The app is unsigned (code signing coming soon). macOS will block it on first ope
 | `s` | Toggle star on current file |
 | `/` | Focus search |
 | `Esc` | Clear search |
-| `Cmd + S` | Toggle sidebar |
+| `Cmd + B` | Toggle sidebar |
+| `Cmd + Shift + R` | Toggle reader mode |
 | `Cmd + Shift + F` | Toggle fill screen |
 | `Cmd + =` / `Cmd + -` | Zoom in / out |
 | `Cmd + 0` | Reset zoom |
@@ -68,23 +68,23 @@ The app is unsigned (code signing coming soon). macOS will block it on first ope
 
 ## Roadmap
 
-### v0.4 — Session Intelligence
+### v0.5 — Session Intelligence
 - **"What's New" launch view** — files modified since your last session, grouped by project
 - **Change badges** — NEW / UPDATED indicators in the sidebar
 - **Staleness indicators** — recently active files pop, old files fade
 - **Drag-to-watch** — drop a folder on the app to start watching it
+- **First-run onboarding** — configure watch folders for your workflow
 
-### v0.5 — Workflow Awareness
+### v0.6 — Workflow Awareness
 - **Project clusters** — auto-group related files (PLAN + ARCHITECTURE + REQUIREMENTS)
 - **Smart collections** — "All Plans", "All Architecture Docs", "All Memory Files"
 - **File relationship graph** — visualize which markdown files link to each other
-- **First-run onboarding** — configure watch folders for your workflow (dev, writing, business)
 
-### v1.0 — Tauri Rewrite
-- **~30MB app** (down from ~500MB) via Tauri 2.0 migration
+### v1.0 — Distribution
 - **Code signing + notarization** — no more Gatekeeper warnings
 - **Homebrew cask** — `brew install --cask markscout`
-- **Windows + Linux** support
+- **Auto-updater** — in-app updates via Tauri updater plugin
+- **Windows + Linux** support (Tauri already supports both)
 
 ## Development
 
@@ -92,39 +92,32 @@ The app is unsigned (code signing coming soon). macOS will block it on first ope
 # Install dependencies
 npm install
 
-# Run the web app
-npm run dev
+# Run in development (Vite + Tauri hot reload)
+npm run tauri dev
 
-# Run inside Electron
-cd macos
-npm install
-npm run dev
+# Build release DMG
+npm run tauri build
 ```
 
-## Building the macOS App
-
-```bash
-cd macos
-npm run make
-```
-
-Builds Next.js, prunes to production dependencies, packages with Electron Forge. Output in `macos/out/make/` (DMG + ZIP). App: ~470MB, DMG: ~160MB.
+Requires [Rust toolchain](https://rustup.rs/) and Xcode Command Line Tools.
 
 ## Stack
 
-- **Next.js 16** — App Router, TypeScript, Tailwind CSS
-- **chokidar** — file system watching via `instrumentation.ts`
+- **Tauri 2.0** — Rust backend, native WebView frontend
+- **Vite** — frontend bundler with React plugin
+- **React 19** — UI components
+- **Rust** — file watching (notify crate), state management, content hashing, search
 - **markdown-it** — rendering with anchor links and syntax highlighting
 - **highlight.js** — code block syntax highlighting (github-dark theme)
-- **Electron 34** — native macOS wrapper with Forge packaging
+- **Tailwind CSS 4** — styling
 - **JetBrains Mono** — sidebar, headings, code
 - **Source Serif 4** — prose body text
 
 ## Architecture
 
-Local Next.js server watches configured directories. Electron spawns the server on a random port and loads it in a BrowserWindow. State persists to `~/.markscout/state.json`.
+Rust backend watches configured directories, maintains a file registry in a `DashMap`, and serves 19 IPC commands to the React frontend. State persists to `~/.markscout/state.json` with atomic writes. File events are emitted via Tauri's event system.
 
-See [ARCHITECTURE.md](ARCHITECTURE.md) for details.
+See [ARCHITECTURE.md](ARCHITECTURE.md) and [TAURI_MIGRATION.md](TAURI_MIGRATION.md) for details.
 
 ## Privacy
 
