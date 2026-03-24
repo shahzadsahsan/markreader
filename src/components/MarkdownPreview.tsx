@@ -323,48 +323,37 @@ export function MarkdownPreview({
     prevPathRef.current = newPath;
   }, [fileContent?.path]);
 
-  // --- Heading breadcrumb ---
-  const [headingBreadcrumb, setHeadingBreadcrumb] = useState('');
+  // --- Current section tracking via scroll ---
+  const [currentSection, setCurrentSection] = useState('');
   const proseRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (!proseRef.current) return;
-    const headings = proseRef.current.querySelectorAll('h1, h2, h3');
-    if (headings.length === 0) return;
+    const scrollParent = proseRef.current?.closest('.content-area') || proseRef.current?.parentElement;
+    if (!scrollParent || !proseRef.current) return;
 
-    const observer = new IntersectionObserver(
-      () => {
-        const aboveViewport: { level: number; text: string }[] = [];
-        headings.forEach(h => {
-          const rect = h.getBoundingClientRect();
-          if (rect.top < 80) {
-            const level = parseInt(h.tagName[1]);
-            aboveViewport.push({ level, text: h.textContent?.trim() || '' });
-          }
-        });
+    const update = () => {
+      if (!proseRef.current) return;
+      const headings = proseRef.current.querySelectorAll('h1, h2, h3');
+      if (headings.length === 0) { setCurrentSection(''); return; }
 
-        if (aboveViewport.length === 0) {
-          setHeadingBreadcrumb('');
-          return;
+      let lastH2 = '', lastH3 = '';
+      headings.forEach(h => {
+        const rect = h.getBoundingClientRect();
+        if (rect.top < 90) {
+          const level = parseInt(h.tagName[1]);
+          const text = h.textContent?.trim() || '';
+          if (level <= 2) { lastH2 = text; lastH3 = ''; }
+          else if (level === 3) { lastH3 = text; }
         }
+      });
 
-        const parts: string[] = [];
-        let lastH1 = '', lastH2 = '', lastH3 = '';
-        for (const h of aboveViewport) {
-          if (h.level === 1) { lastH1 = h.text; lastH2 = ''; lastH3 = ''; }
-          else if (h.level === 2) { lastH2 = h.text; lastH3 = ''; }
-          else if (h.level === 3) { lastH3 = h.text; }
-        }
-        if (lastH1) parts.push(lastH1);
-        if (lastH2) parts.push(lastH2);
-        if (lastH3) parts.push(lastH3);
-        setHeadingBreadcrumb(parts.join(' \u203A '));
-      },
-      { threshold: 0, rootMargin: '-80px 0px 0px 0px' }
-    );
+      // Show deepest section (skip h1 — that's the doc title, already visible)
+      setCurrentSection(lastH3 || lastH2 || '');
+    };
 
-    headings.forEach(h => observer.observe(h));
-    return () => observer.disconnect();
+    scrollParent.addEventListener('scroll', update, { passive: true });
+    update();
+    return () => scrollParent.removeEventListener('scroll', update);
   }, [html]);
 
   // Add copy buttons to code blocks
@@ -515,6 +504,12 @@ export function MarkdownPreview({
               <span>{fileContent.wordCount.toLocaleString()} words</span>
               <span>{'\u00B7'}</span>
               <span>{fileContent.readingTime}m read</span>
+              {currentSection && (
+                <>
+                  <span>{'\u00B7'}</span>
+                  <span style={{ color: 'var(--accent)', opacity: 0.7 }}>{currentSection}</span>
+                </>
+              )}
             </div>
           </div>
 
@@ -558,24 +553,7 @@ export function MarkdownPreview({
         </div>
       </div>
 
-      {/* Heading breadcrumb */}
-      {headingBreadcrumb && (
-        <div
-          className="sticky z-10 px-6 py-1"
-          style={{
-            top: 56,
-            fontFamily: 'var(--font-ui)',
-            fontSize: '11px',
-            color: '#666',
-            background: 'color-mix(in srgb, var(--bg) 75%, transparent)',
-            backdropFilter: 'blur(4px)',
-            maxWidth: `calc(720px * ${zoomLevel})`,
-            margin: '0 auto',
-          }}
-        >
-          {headingBreadcrumb}
-        </div>
-      )}
+      {/* No separate breadcrumb bar — section shown inline in header */}
 
       {/* Rendered markdown */}
       <div

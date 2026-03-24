@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import type { FileEntry } from '../lib/types';
 import { FileItem, getStalenessOpacity } from './FileItem';
 
@@ -28,6 +28,17 @@ export function RecentsView({
 }: RecentsViewProps) {
   const [timeFilter, setTimeFilter] = useState<TimeFilter>('all');
   const [groupByFolder, setGroupByFolder] = useState(() => localStorage.getItem('markscout-recents-grouped') === 'true');
+  // Default all folders to collapsed
+  const [expandedFolders, setExpandedFolders] = useState<Set<string>>(new Set());
+
+  const toggleFolder = useCallback((project: string) => {
+    setExpandedFolders(prev => {
+      const next = new Set(prev);
+      if (next.has(project)) next.delete(project);
+      else next.add(project);
+      return next;
+    });
+  }, []);
 
   const filteredFiles = useMemo(() => {
     if (timeFilter === 'all') return files;
@@ -45,7 +56,7 @@ export function RecentsView({
       groups.set(f.project, arr);
     }
     return [...groups.entries()]
-      .map(([project, files]) => ({ project, files, latestMod: Math.max(...files.map(f => f.modifiedAt)) }))
+      .map(([project, gFiles]) => ({ project, files: gFiles, latestMod: Math.max(...gFiles.map(f => f.modifiedAt)) }))
       .sort((a, b) => b.latestMod - a.latestMod);
   }, [filteredFiles, groupByFolder]);
 
@@ -65,12 +76,14 @@ export function RecentsView({
             {f.label}
           </button>
         ))}
+        <div style={{ flex: 1 }} />
         <button
           className={`filter-pill ${groupByFolder ? 'active' : ''}`}
           onClick={() => {
             setGroupByFolder(prev => {
               const next = !prev;
               localStorage.setItem('markscout-recents-grouped', String(next));
+              if (next) setExpandedFolders(new Set()); // collapse all on enable
               return next;
             });
           }}
@@ -91,38 +104,51 @@ export function RecentsView({
         </div>
       ) : groupByFolder && groupedFiles ? (
         <div className="py-1">
-          {groupedFiles.map(group => (
-            <div key={group.project}>
-              <div
-                className="px-3 py-1.5 flex items-center gap-2"
-                style={{
-                  fontSize: 11,
-                  fontFamily: 'var(--font-mono)',
-                  color: 'var(--text-muted)',
-                  borderBottom: '1px solid var(--border)',
-                  background: 'var(--bg)',
-                  position: 'sticky',
-                  top: 0,
-                  zIndex: 1,
-                }}
-              >
-                <span>{'\uD83D\uDCC2'}</span>
-                <span>{group.project}</span>
-                <span style={{ fontSize: 9, opacity: 0.5 }}>{group.files.length}</span>
+          {groupedFiles.map(group => {
+            const isExpanded = expandedFolders.has(group.project);
+            return (
+              <div key={group.project}>
+                <button
+                  onClick={() => toggleFolder(group.project)}
+                  className="w-full px-3 py-1.5 flex items-center gap-2 text-left"
+                  style={{
+                    fontSize: 11,
+                    fontFamily: 'var(--font-mono)',
+                    color: 'var(--text-muted)',
+                    borderBottom: '1px solid var(--border)',
+                    background: 'var(--bg)',
+                    position: 'sticky',
+                    top: 0,
+                    zIndex: 1,
+                    border: 'none',
+                    cursor: 'pointer',
+                    borderBottomWidth: 1,
+                    borderBottomStyle: 'solid',
+                    borderBottomColor: 'var(--border)',
+                    transition: 'color 0.12s',
+                  }}
+                  onMouseEnter={e => (e.currentTarget.style.color = 'var(--text)')}
+                  onMouseLeave={e => (e.currentTarget.style.color = 'var(--text-muted)')}
+                >
+                  <span style={{ fontSize: 9, opacity: 0.6 }}>{isExpanded ? '\u25BE' : '\u25B8'}</span>
+                  <span>{'\uD83D\uDCC2'}</span>
+                  <span style={{ flex: 1 }}>{group.project}</span>
+                  <span style={{ fontSize: 9, opacity: 0.5 }}>{group.files.length}</span>
+                </button>
+                {isExpanded && group.files.map(file => (
+                  <FileItem
+                    key={file.path}
+                    file={file}
+                    selected={file.path === selectedPath}
+                    starred={favorites.has(file.path)}
+                    onSelect={onSelectFile}
+                    onToggleStar={onToggleStar}
+                    stalenessOpacity={getStalenessOpacity(file.modifiedAt)}
+                  />
+                ))}
               </div>
-              {group.files.map(file => (
-                <FileItem
-                  key={file.path}
-                  file={file}
-                  selected={file.path === selectedPath}
-                  starred={favorites.has(file.path)}
-                  onSelect={onSelectFile}
-                  onToggleStar={onToggleStar}
-                  stalenessOpacity={getStalenessOpacity(file.modifiedAt)}
-                />
-              ))}
-            </div>
-          ))}
+            );
+          })}
         </div>
       ) : (
         <div className="py-1">
