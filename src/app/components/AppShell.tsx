@@ -5,7 +5,7 @@ import { Sidebar } from './Sidebar';
 import { MarkdownPreview, PALETTES, type PaletteId } from './MarkdownPreview';
 import { StatusBar } from './StatusBar';
 import { PreferencesPanel } from './PreferencesPanel';
-import type { FileEntry, SidebarView, FileContentResponse, FolderNode } from '@/lib/types';
+import type { FileEntry, SidebarView, FileContentResponse, FolderNode, SearchResult } from '@/lib/types';
 
 type ConnectionStatus = 'connected' | 'reconnecting' | 'disconnected';
 
@@ -58,6 +58,15 @@ export function AppShell() {
   const [showWelcome, setShowWelcome] = useState(false);
   const welcomeDismissedRef = useRef(false);
 
+  // Content search
+  const [contentSearch, setContentSearch] = useState(false);
+  const [searchResults, setSearchResults] = useState<SearchResult[] | null>(null);
+  const [searchLoading, setSearchLoading] = useState(false);
+  const searchAbortRef = useRef<AbortController | null>(null);
+
+  // Update notification
+  const [updateInfo, setUpdateInfo] = useState<{ latestVersion: string; releaseUrl: string } | null>(null);
+
   // Shortcuts cheat sheet
   const [showShortcuts, setShowShortcuts] = useState(false);
 
@@ -89,6 +98,7 @@ export function AppShell() {
           }
           if (data.ui.zoomLevel !== undefined) setZoomLevel(data.ui.zoomLevel);
           if (data.ui.fillScreen !== undefined) setFillScreen(data.ui.fillScreen);
+          if (data.ui.contentSearch !== undefined) setContentSearch(data.ui.contentSearch);
           if (data.ui.palette) setActivePalette(data.ui.palette);
         }
         if (data.favoriteFolders) {
@@ -137,6 +147,54 @@ export function AppShell() {
       f.relativePath.toLowerCase().includes(q)
     );
   }, [files, debouncedSearch, minLines]);
+
+  // --- Content search effect ---
+  useEffect(() => {
+    if (!contentSearch || debouncedSearch.trim().length < 2) {
+      setSearchResults(null);
+      setSearchLoading(false);
+      return;
+    }
+
+    searchAbortRef.current?.abort();
+    const controller = new AbortController();
+    searchAbortRef.current = controller;
+    setSearchLoading(true);
+
+    fetch(`/api/search?q=${encodeURIComponent(debouncedSearch)}`, { signal: controller.signal })
+      .then(r => r.json())
+      .then(data => {
+        if (!controller.signal.aborted) {
+          setSearchResults(data.results || []);
+          setSearchLoading(false);
+        }
+      })
+      .catch(() => {
+        if (!controller.signal.aborted) {
+          setSearchResults([]);
+          setSearchLoading(false);
+        }
+      });
+
+    return () => controller.abort();
+  }, [contentSearch, debouncedSearch]);
+
+  // --- Toggle content search (persisted) ---
+  const toggleContentSearch = useCallback(() => {
+    setContentSearch(prev => {
+      const next = !prev;
+      fetch('/api/ui', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ contentSearch: next }),
+      }).catch(() => {});
+      if (!next) {
+        setSearchResults(null);
+        setSearchLoading(false);
+      }
+      return next;
+    });
+  }, []);
 
   // --- Fetch files for current view ---
   const fetchFiles = useCallback(async (view?: SidebarView) => {
@@ -656,6 +714,16 @@ export function AppShell() {
     }
   }, [triggerAddFolder]);
 
+  // --- Listen for update-available IPC from Electron ---
+  useEffect(() => {
+    const electron = (window as unknown as { electron?: { onUpdateAvailable?: (cb: (info: { latestVersion: string; releaseUrl: string }) => void) => () => void } }).electron;
+    if (electron?.onUpdateAvailable) {
+      return electron.onUpdateAvailable((info) => {
+        setUpdateInfo(info);
+      });
+    }
+  }, []);
+
   // --- Welcome Screen Component ---
   if (showWelcome) {
     return (
@@ -733,6 +801,63 @@ export function AppShell() {
 
   return (
     <div className="flex flex-col h-screen overflow-hidden" style={paletteStyle}>
+      {/* Update notification banner */}
+      {updateInfo && (
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: 12,
+            padding: '6px 16px',
+            background: 'var(--accent, #d4a04a)',
+            color: '#0d0d0d',
+            fontSize: 12,
+            fontFamily: 'var(--font-jetbrains-mono), monospace',
+            fontWeight: 500,
+          }}
+        >
+          <span>MarkScout v{updateInfo.latestVersion} available</span>
+          <button
+            onClick={() => {
+              const electron = (window as unknown as { electron?: { openExternal?: (url: string) => void } }).electron;
+              if (electron?.openExternal) {
+                electron.openExternal(updateInfo.releaseUrl);
+              } else {
+                window.open(updateInfo.releaseUrl, '_blank');
+              }
+            }}
+            style={{
+              background: '#0d0d0d',
+              color: 'var(--accent, #d4a04a)',
+              border: 'none',
+              borderRadius: 4,
+              padding: '2px 10px',
+              fontSize: 11,
+              cursor: 'pointer',
+              fontFamily: 'inherit',
+            }}
+          >
+            View Release
+          </button>
+          <button
+            onClick={() => setUpdateInfo(null)}
+            style={{
+              background: 'none',
+              border: 'none',
+              color: '#0d0d0d',
+              cursor: 'pointer',
+              fontSize: 14,
+              lineHeight: 1,
+              padding: '0 4px',
+              opacity: 0.6,
+            }}
+            title="Dismiss"
+          >
+            ✕
+          </button>
+        </div>
+      )}
       <div className="flex flex-1 overflow-hidden">
         <div className="sidebar-wrapper">
           <Sidebar
@@ -760,6 +885,10 @@ export function AppShell() {
             searchInputRef={searchInputRef}
             customWatchDirs={customWatchDirs}
             onRemoveWatchDir={removeWatchDir}
+            contentSearch={contentSearch}
+            onToggleContentSearch={toggleContentSearch}
+            searchResults={searchResults}
+            searchLoading={searchLoading}
           />
         </div>
 

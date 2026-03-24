@@ -1,9 +1,10 @@
 'use client';
 
-import type { FileEntry, SidebarView, FolderNode } from '@/lib/types';
+import type { FileEntry, SidebarView, FolderNode, SearchResult } from '@/lib/types';
 import { RecentsView } from './RecentsView';
 import { FoldersView } from './FoldersView';
 import { FavoritesView } from './FavoritesView';
+import { FileItem } from './FileItem';
 import type { RefObject } from 'react';
 
 interface SidebarProps {
@@ -32,6 +33,10 @@ interface SidebarProps {
   searchInputRef: RefObject<HTMLInputElement | null>;
   customWatchDirs?: string[];
   onRemoveWatchDir?: (dir: string) => void;
+  contentSearch: boolean;
+  onToggleContentSearch: () => void;
+  searchResults: SearchResult[] | null;
+  searchLoading: boolean;
 }
 
 const TABS: { view: SidebarView; icon: string; label: string; shortcut: string }[] = [
@@ -78,6 +83,10 @@ export function Sidebar({
   searchInputRef,
   customWatchDirs,
   onRemoveWatchDir,
+  contentSearch,
+  onToggleContentSearch,
+  searchResults,
+  searchLoading,
 }: SidebarProps) {
   return (
     <aside
@@ -132,7 +141,7 @@ export function Sidebar({
           <input
             ref={searchInputRef}
             type="text"
-            placeholder="Filter files... ( / )"
+            placeholder={contentSearch ? "Search contents... ( / )" : "Filter files... ( / )"}
             value={searchQuery}
             onChange={(e) => onSearchChange(e.target.value)}
             className="w-full px-2 py-1 text-xs rounded"
@@ -144,6 +153,18 @@ export function Sidebar({
               outline: 'none',
             }}
           />
+          <label
+            className="flex items-center gap-1.5 mt-1 cursor-pointer select-none"
+            style={{ fontSize: 10, color: 'var(--text-muted)' }}
+          >
+            <input
+              type="checkbox"
+              checked={contentSearch}
+              onChange={onToggleContentSearch}
+              style={{ accentColor: 'var(--accent)', width: 12, height: 12 }}
+            />
+            Search file contents
+          </label>
         </div>
       )}
 
@@ -152,6 +173,34 @@ export function Sidebar({
         <div className="flex-1 overflow-y-auto sidebar-scroll">
           {loading ? (
             <SkeletonList />
+          ) : contentSearch && searchQuery.trim().length >= 2 ? (
+            /* Content search results */
+            searchLoading ? (
+              <SkeletonList />
+            ) : searchResults && searchResults.length > 0 ? (
+              <div className="py-1">
+                <div className="px-3 py-1 text-xs" style={{ color: 'var(--text-muted)', fontSize: 10 }}>
+                  {searchResults.length} file{searchResults.length !== 1 ? 's' : ''} matched
+                </div>
+                {searchResults.map(r => (
+                  <FileItem
+                    key={r.file.path}
+                    file={r.file}
+                    selected={selectedPath === r.file.path}
+                    starred={favorites.has(r.file.path)}
+                    onSelect={onSelectFile}
+                    onToggleStar={onToggleStar}
+                    snippet={r.snippet}
+                    searchQuery={searchQuery}
+                    matchCount={r.matchCount}
+                  />
+                ))}
+              </div>
+            ) : (
+              <div className="px-3 py-6 text-center" style={{ color: 'var(--text-muted)', fontSize: 12 }}>
+                No files contain &ldquo;{searchQuery}&rdquo;
+              </div>
+            )
           ) : (
             <>
               {view === 'recents' && (

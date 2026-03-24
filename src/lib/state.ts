@@ -57,6 +57,7 @@ function defaultState(): AppState {
       expandedGroups: [],
       zoomLevel: 1,
       fillScreen: false,
+      contentSearch: false,
     },
   };
 }
@@ -90,6 +91,7 @@ export async function loadState(): Promise<AppState> {
       if (parsed.preferences.minFileLength === undefined) parsed.preferences.minFileLength = 0;
       if (parsed.ui.zoomLevel === undefined) parsed.ui.zoomLevel = 1;
       if (parsed.ui.fillScreen === undefined) parsed.ui.fillScreen = false;
+      if (parsed.ui.contentSearch === undefined) parsed.ui.contentSearch = false;
       cachedState = parsed;
     }
   } catch {
@@ -215,6 +217,12 @@ export async function saveCollapsedGroups(groups: string[]): Promise<void> {
 export async function saveZoomLevel(zoomLevel: number): Promise<void> {
   const state = await loadState();
   state.ui.zoomLevel = zoomLevel;
+  await enqueueWrite(saveState);
+}
+
+export async function saveContentSearch(contentSearch: boolean): Promise<void> {
+  const state = await loadState();
+  state.ui.contentSearch = contentSearch;
   await enqueueWrite(saveState);
 }
 

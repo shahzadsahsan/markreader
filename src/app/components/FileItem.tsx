@@ -13,6 +13,9 @@ interface FileItemProps {
   timeLabel?: string;
   indentPx?: number;    // Extra left padding for tree hierarchy
   hideProject?: boolean; // Suppress project badge (redundant in folder tree)
+  snippet?: string;      // Content search match snippet
+  searchQuery?: string;  // The query term to highlight in snippet
+  matchCount?: number;   // Number of matches in file
 }
 
 function formatRelativeTime(epochMs: number): string {
@@ -30,6 +33,33 @@ function formatRelativeTime(epochMs: number): string {
   return `${Math.floor(days / 30)}mo ago`;
 }
 
+function HighlightedSnippet({ text, query }: { text: string; query: string }) {
+  if (!query) return <>{text}</>;
+  const parts: { text: string; highlight: boolean }[] = [];
+  const lower = text.toLowerCase();
+  const qLower = query.toLowerCase();
+  let cursor = 0;
+  while (cursor < text.length) {
+    const idx = lower.indexOf(qLower, cursor);
+    if (idx === -1) {
+      parts.push({ text: text.slice(cursor), highlight: false });
+      break;
+    }
+    if (idx > cursor) parts.push({ text: text.slice(cursor, idx), highlight: false });
+    parts.push({ text: text.slice(idx, idx + query.length), highlight: true });
+    cursor = idx + query.length;
+  }
+  return (
+    <>
+      {parts.map((p, i) =>
+        p.highlight
+          ? <span key={i} style={{ color: 'var(--accent)', fontWeight: 600 }}>{p.text}</span>
+          : <span key={i}>{p.text}</span>
+      )}
+    </>
+  );
+}
+
 export const FileItem = memo(function FileItem({
   file,
   selected,
@@ -40,6 +70,9 @@ export const FileItem = memo(function FileItem({
   timeLabel,
   indentPx,
   hideProject,
+  snippet,
+  searchQuery,
+  matchCount,
 }: FileItemProps) {
   const timestamp = timeField || file.modifiedAt;
   const label = timeLabel || '';
@@ -61,7 +94,25 @@ export const FileItem = memo(function FileItem({
           </div>
           <div className="text-xs mt-0.5 flex items-center gap-1.5" style={{ color: 'var(--text-muted)' }}>
             <span className="truncate">{label}{formatRelativeTime(timestamp)}</span>
+            {matchCount !== undefined && matchCount > 0 && (
+              <span style={{ color: 'var(--accent)', fontSize: 10, flexShrink: 0 }}>
+                {matchCount} match{matchCount !== 1 ? 'es' : ''}
+              </span>
+            )}
           </div>
+          {snippet && (
+            <div
+              className="text-xs mt-1 line-clamp-2"
+              style={{
+                color: 'var(--text-muted)',
+                fontSize: 11,
+                lineHeight: 1.4,
+                opacity: 0.8,
+              }}
+            >
+              <HighlightedSnippet text={snippet} query={searchQuery || ''} />
+            </div>
+          )}
         </div>
         <button
           className={`star-btn shrink-0 ${starred ? 'starred' : ''}`}

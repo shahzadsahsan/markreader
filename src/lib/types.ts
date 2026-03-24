@@ -82,6 +82,7 @@ export interface AppState {
     expandedGroups: string[];      // Folder paths user has expanded (persisted)
     zoomLevel: number;             // Text magnification (0.85, 1, 1.25, 1.5, 2)
     fillScreen: boolean;           // Expand prose to fill screen width
+    contentSearch: boolean;         // Search file contents instead of filenames
   };
 }
 
@@ -104,6 +105,14 @@ export interface SSEScanCompleteEvent {
 }
 
 export type SSEEvent = SSEFileEvent | SSERemoveEvent | SSEScanCompleteEvent;
+
+// Search result type
+export interface SearchResult {
+  file: FileEntry;
+  snippet: string;      // "...context around **match** here..."
+  matchCount: number;    // total occurrences in file
+  lineNumber: number;    // first match line number
+}
 
 // API response types
 export interface FileContentResponse {

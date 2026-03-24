@@ -17,4 +17,16 @@ contextBridge.exposeInMainWorld('electron', {
     ipcRenderer.on('trigger-add-folder', handler);
     return () => { ipcRenderer.removeListener('trigger-add-folder', handler); };
   },
+
+  // Update system
+  appVersion: (() => {
+    try { return require('../../package.json').version; } catch { return '0.0.0'; }
+  })(),
+  checkForUpdate: () => ipcRenderer.invoke('check-for-update'),
+  openExternal: (url: string) => ipcRenderer.invoke('open-external', url),
+  onUpdateAvailable: (callback: (info: unknown) => void) => {
+    const handler = (_event: unknown, info: unknown) => callback(info);
+    ipcRenderer.on('update-available', handler);
+    return () => { ipcRenderer.removeListener('update-available', handler); };
+  },
 });

@@ -6,6 +6,7 @@ import * as http from 'http';
 import * as fs from 'fs';
 import * as os from 'os';
 import { buildMenu } from './menu';
+import { checkForUpdate, getCurrentVersion } from './updater';
 
 // ── Paths ──────────────────────────────────────────────────────────────────────
 
@@ -296,6 +297,18 @@ function registerIpcHandlers(): void {
     }
   });
 
+  ipcMain.handle('open-external', (_event, url: string) => {
+    if (typeof url === 'string' && (url.startsWith('https://') || url.startsWith('http://'))) {
+      shell.openExternal(url);
+    }
+  });
+
+  ipcMain.handle('get-app-version', () => getCurrentVersion());
+
+  ipcMain.handle('check-for-update', async () => {
+    return await checkForUpdate();
+  });
+
   ipcMain.handle('dialog:selectFolder', async () => {
     const result = await dialog.showOpenDialog({
       properties: ['openDirectory'],
@@ -453,6 +466,14 @@ app.on('ready', async () => {
     console.log(`Next.js ready on port ${port}`);
     createWindow(port);
     startServerHealthCheck();
+
+    // Check for updates 5s after launch (non-blocking)
+    setTimeout(async () => {
+      const update = await checkForUpdate();
+      if (update && mainWindow && !mainWindow.isDestroyed()) {
+        mainWindow.webContents.send('update-available', update);
+      }
+    }, 5000);
   } catch (err) {
     console.error('Failed to start:', err);
     // Show error dialog instead of silently dying

@@ -15,6 +15,7 @@ import {
   saveExpandedGroups,
   saveZoomLevel,
   saveFillScreen,
+  saveContentSearch,
   savePalette,
   toggleFavoriteFolder,
 } from '@/lib/state';
@@ -40,6 +41,7 @@ export async function POST(request: NextRequest) {
   if (body.expandedGroups) await saveExpandedGroups(body.expandedGroups);
   if (body.zoomLevel !== undefined) await saveZoomLevel(body.zoomLevel);
   if (body.fillScreen !== undefined) await saveFillScreen(body.fillScreen);
+  if (body.contentSearch !== undefined) await saveContentSearch(body.contentSearch);
   if (body.palette) await savePalette(body.palette);
   if (body.toggleFolderStar) {
     const isNowFav = await toggleFavoriteFolder(body.toggleFolderStar);

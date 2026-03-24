@@ -1,7 +1,8 @@
-import { app, Menu, shell, BrowserWindow, MenuItemConstructorOptions } from 'electron';
+import { app, Menu, shell, BrowserWindow, MenuItemConstructorOptions, dialog } from 'electron';
 import * as path from 'path';
 import * as os from 'os';
 import * as fs from 'fs';
+import { checkForUpdate, getCurrentVersion } from './updater';
 
 const STATE_DIR = path.join(os.homedir(), '.markscout');
 const STATE_FILE = path.join(STATE_DIR, 'state.json');
@@ -29,6 +30,33 @@ export function buildMenu(): Menu {
       label: app.name,
       submenu: [
         { role: 'about' },
+        {
+          label: 'Check for Updates...',
+          click: async () => {
+            const win = BrowserWindow.getFocusedWindow();
+            const update = await checkForUpdate();
+            if (update) {
+              if (win) win.webContents.send('update-available', update);
+              const { response } = await dialog.showMessageBox({
+                type: 'info',
+                title: 'Update Available',
+                message: `MarkScout v${update.latestVersion} is available (you have v${update.currentVersion}).`,
+                buttons: ['View Release', 'Later'],
+                defaultId: 0,
+              });
+              if (response === 0) {
+                shell.openExternal(update.releaseUrl);
+              }
+            } else {
+              dialog.showMessageBox({
+                type: 'info',
+                title: 'No Updates',
+                message: `MarkScout v${getCurrentVersion()} is up to date.`,
+                buttons: ['OK'],
+              });
+            }
+          },
+        },
         { type: 'separator' },
         { role: 'hide' },
         { role: 'hideOthers' },
