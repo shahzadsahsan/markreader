@@ -2,9 +2,9 @@
 
 **A beautiful markdown reader for AI-assisted developers.**
 
-![macOS](https://img.shields.io/badge/platform-macOS-black) ![Tauri](https://img.shields.io/badge/Tauri-2.0-black) ![Rust](https://img.shields.io/badge/Rust-backend-black) ![v0.5.0](https://img.shields.io/badge/version-0.5.0-d4a04a) ![License](https://img.shields.io/badge/license-MIT-black)
+![macOS](https://img.shields.io/badge/platform-macOS-black) ![Tauri](https://img.shields.io/badge/Tauri-2.0-black) ![Rust](https://img.shields.io/badge/Rust-backend-black) ![v0.5.1](https://img.shields.io/badge/version-0.5.1-d4a04a) ![License](https://img.shields.io/badge/license-MIT-black)
 
-<img width="412" height="416" alt="markscout app icon" src="https://github.com/user-attachments/assets/469278db-01ba-4a43-b9db-ffe0e9e2d679" />
+<img width="128" height="128" alt="MarkScout" src="icon-128.png" />
 
 MarkScout turns the scattered markdown files from your AI coding sessions into a calm, focused reading experience. Plans, specs, architecture docs, memory files, research notes — all surfaced instantly, beautifully rendered, with the noise hidden.
 
@@ -19,6 +19,7 @@ MarkScout is designed for reading, not editing. Every detail serves that goal:
 - **5 typography presets** — Classic (serif), Modern (system sans), Literary (elegant serif), Developer (monospace), and Accessible (larger text, wider spacing, optimized for readability)
 - **12 color palettes** — 9 dark (Parchment Dusk, Deep Ocean, Rosewood, Terminal, Warm Paper, Nord Frost, Monokai, Solarized, Catppuccin) + 3 light (Daylight, Sepia, Arctic)
 - **Antialiased text rendering** with proper font hierarchy — serif for prose, sans for UI, monospace for code
+- **Inline section tracking** — current heading shows in the file header as you scroll, no extra chrome
 - **Fill-screen mode** — expand prose to 90% width for immersive reading
 - **Zoom controls** — 5 zoom levels (85% to 200%)
 - **Code syntax highlighting** — github-dark theme via highlight.js
@@ -33,18 +34,13 @@ MarkScout is designed for reading, not editing. Every detail serves that goal:
 - **Keyboard-driven** — `j`/`k` navigation, `/` search, `?` shortcuts panel
 
 ### Sidebar Views
-- **What's New** — files changed since your last session, grouped by project, with NEW/UPDATED badges
-- **Recents** — all files sorted by last modified, with staleness indicators (active files pop, old files fade)
+- **Recents** — all files sorted by last modified, with staleness indicators and collapsible folder grouping
 - **Folders** — collapsible tree with real directory hierarchy
 - **Favorites** — starred files and folders
 
-### Smart Collections (v0.5)
-Auto-groups your files by document type — Plans, Architecture, Requirements, Memory, Research, READMEs, Guides, Changelogs. Click a collection to browse its files across all projects.
-
 ### File Intelligence
-- **Related files** — detects markdown cross-references and shows clickable link pills below the file header
 - **Move tracking** — if you rename or move a file, your favorites and history follow it via content hashing
-- **Session tracking** — remembers when you last used the app so "What's New" shows exactly what changed
+- **Inline section indicator** — shows the current heading in the file header as you scroll through long documents
 
 ### Native macOS
 - **11 MB app** — Tauri 2.0 with Rust backend (96% smaller than Electron)
@@ -70,7 +66,7 @@ You only need to do this once.
 
 | Key | Action |
 |-----|--------|
-| `1` `2` `3` `4` | Switch view (What's New, Recents, Folders, Favorites) |
+| `1` `2` `3` | Switch view (Recents, Folders, Favorites) |
 | `j` / `k` | Navigate files |
 | `s` | Star / unstar file |
 | `/` | Focus search |
@@ -107,7 +103,7 @@ Requires [Rust toolchain](https://rustup.rs/) and Xcode Command Line Tools.
 
 - **Tauri 2.0** — Rust backend, native WebView frontend
 - **Vite + React 19** — fast frontend bundler
-- **Rust** — file watching (notify), state management, content hashing, search, collections
+- **Rust** — file watching (notify), state management, content hashing, search
 - **markdown-it + highlight.js** — rendering with syntax highlighting
 - **Tailwind CSS 4** — styling
 - **Source Serif 4** — prose typography
