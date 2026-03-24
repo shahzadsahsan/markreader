@@ -11,19 +11,24 @@ Built for developers who work with AI coding agents. If your workflow generates 
 ## What It Does
 
 - Watches any folder for `.md` files and shows them in a live-updating sidebar
-- Smart filters hide framework junk — `node_modules`, build artifacts, changelogs, license files — so you see your actual documents
-- Four sidebar views: **Recents**, **Folders**, **Favorites**, and **History**
-- Click between linked markdown files instantly — inline code references like `BUILD.md` resolve and navigate automatically
-- 9 color palettes from minimal to code-editor inspired
-- Theater mode for focused reading with vignette and enhanced typography
-- Keyboard-driven: arrow keys to browse, `/` to search, `Cmd+.` for reader mode
+- Smart filters hide framework junk — `node_modules`, build artifacts, changelogs, license files
+- **Full-text content search** — search inside all files, not just filenames, with highlighted match snippets
+- Four sidebar views: **Recents**, **Folders**, **Favorites**
+- Resizable sidebar with real folder hierarchy (expand/collapse project by project)
+- Star files and folders — starred folders appear in Favorites with their files
+- 12 color themes: 9 dark + 3 light (Daylight, Sepia, Arctic)
+- Theme applies to the entire app (sidebar + reader)
+- Click between linked markdown files instantly — inline references resolve and navigate automatically
+- Fill-screen mode for focused reading with expanded prose width
+- Keyboard-driven: `j`/`k` to navigate, `/` to search, `?` for shortcuts
 - Reveal any file in Finder with one click
-- Add custom watch folders and filter categories through Preferences
+- Add, disable, or remove watch folders through Preferences
+- **Auto-update checker** — checks GitHub Releases on launch, download updates in-app
 
 ## What It Does Not Do
 
 - Edit files. This is a reader.
-- Phone home. Everything is local.
+- Phone home. Everything is local (except the optional update check to GitHub).
 - Slow down. Files load in single-digit milliseconds.
 
 ## Download
@@ -32,22 +37,21 @@ Grab the latest `.dmg` from [Releases](https://github.com/shahzadsahsan/markread
 
 > The app is unsigned. Right-click → Open on first launch to bypass Gatekeeper.
 
-## Screenshots
-
-*Coming soon*
-
 ## Keyboard Shortcuts
 
 | Key | Action |
 |-----|--------|
-| `1` `2` `3` `4` | Switch sidebar view (Recents, Folders, Favorites, History) |
-| `j` / `k` or `↓` / `↑` | Navigate files in sidebar |
-| `Enter` | Open selected file |
+| `1` `2` `3` | Switch sidebar view (Recents, Folders, Favorites) |
+| `j` / `k` | Navigate files up / down |
 | `s` | Toggle star on current file |
 | `/` | Focus search |
-| `Cmd + .` | Toggle theater mode |
-| `Cmd + +` / `Cmd + -` | Zoom text |
-| `Escape` | Close search / exit theater mode |
+| `Esc` | Clear search |
+| `Cmd + S` | Toggle sidebar |
+| `Cmd + Shift + F` | Toggle fill screen |
+| `Cmd + =` / `Cmd + -` | Zoom in / out |
+| `Cmd + 0` | Reset zoom |
+| `Cmd + ,` | Preferences |
+| `?` | Show shortcut help |
 
 ## Development
 
@@ -67,15 +71,11 @@ npm run dev
 ## Building the macOS App
 
 ```bash
-# Build Next.js first
-npm run build
-
-# Build and package the Electron app
 cd macos
 npm run make
 ```
 
-Artifacts land in `macos/out/make/` (DMG + ZIP).
+This builds Next.js, prunes to production dependencies only, and packages with Electron Forge. Artifacts land in `macos/out/make/` (DMG + ZIP). App size: ~470MB, DMG: ~160MB.
 
 ## Stack
 
@@ -89,13 +89,13 @@ Artifacts land in `macos/out/make/` (DMG + ZIP).
 
 ## Architecture
 
-The app runs a local Next.js server that watches configured directories. The Electron wrapper spawns this server on a random port and loads it in a BrowserWindow. State persists to `~/.markreader/state.json`.
+The app runs a local Next.js server that watches configured directories. The Electron wrapper spawns this server on a random port and loads it in a BrowserWindow. State persists to `~/.markscout/state.json`.
 
 See [ARCHITECTURE.md](ARCHITECTURE.md) for detailed implementation notes.
 
 ## Privacy
 
-MarkScout does not collect, transmit, or store any data outside your machine. No analytics, no accounts, no network calls. Your files stay on your disk.
+MarkScout does not collect, transmit, or store any data outside your machine. No analytics, no accounts. The only network call is an optional update check to the GitHub Releases API on launch.
 
 ## License
 
