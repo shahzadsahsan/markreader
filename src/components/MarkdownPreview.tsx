@@ -486,7 +486,7 @@ export function MarkdownPreview({
     return (
       <div className="flex items-center justify-center h-full" style={{ color: 'var(--text-muted)' }}>
         <div className="text-center">
-          <p className="text-lg mb-1" style={{ fontFamily: 'var(--font-jetbrains-mono), monospace' }}>
+          <p className="text-lg mb-1" style={{ fontFamily: 'var(--font-ui)' }}>
             MarkScout
           </p>
           <p className="text-sm">Select a file to preview</p>
@@ -606,7 +606,7 @@ export function MarkdownPreview({
           className="sticky z-10 px-6 py-1"
           style={{
             top: 56,
-            fontFamily: 'var(--font-jetbrains-mono), monospace',
+            fontFamily: 'var(--font-ui)',
             fontSize: '11px',
             color: '#666',
             background: 'color-mix(in srgb, var(--bg) 75%, transparent)',
@@ -665,7 +665,7 @@ export function MarkdownPreview({
                   background: activePalette === p.id ? 'rgba(212,160,74,0.15)' : 'transparent',
                   cursor: 'pointer',
                   textAlign: 'left',
-                  fontFamily: 'var(--font-jetbrains-mono), monospace',
+                  fontFamily: 'var(--font-ui)',
                   fontSize: 11,
                   color: activePalette === p.id ? '#d4a04a' : '#e0e0e0',
                 }}

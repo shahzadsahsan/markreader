@@ -108,7 +108,7 @@ export const FileItem = memo(function FileItem({
         <div className="flex-1 min-w-0">
           <div
             className="text-sm font-medium truncate flex items-center gap-2"
-            style={{ fontFamily: 'var(--font-jetbrains-mono), monospace', color: 'var(--text)' }}
+            style={{ fontFamily: 'var(--font-ui)', color: 'var(--text)' }}
           >
             <span className="truncate">{file.name}</span>
             {badge === 'new' && <span className="badge-new">NEW</span>}

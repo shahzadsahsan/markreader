@@ -7,6 +7,7 @@ import { Sidebar } from './Sidebar';
 import { MarkdownPreview, PALETTES, type PaletteId } from './MarkdownPreview';
 import { StatusBar } from './StatusBar';
 import { PreferencesPanel } from './PreferencesPanel';
+import { loadSavedTypography, getTypographyPreset, applyTypographyPreset } from '../lib/typography';
 
 type ConnectionStatus = 'connected' | 'reconnecting' | 'disconnected';
 
@@ -83,6 +84,13 @@ export default function AppShell() {
   const [activePalette, setActivePalette] = useState<PaletteId>('parchment-dusk');
   const [minLines, setMinLines] = useState(20);
   const mainRef = useRef<HTMLElement>(null);
+
+  // --- Apply saved typography preset on mount ---
+  useEffect(() => {
+    const savedId = loadSavedTypography();
+    const preset = getTypographyPreset(savedId);
+    applyTypographyPreset(preset);
+  }, []);
 
   // --- Restore persisted UI state on mount ---
   useEffect(() => {
@@ -722,7 +730,7 @@ export default function AppShell() {
           <div className="text-center" style={{ marginBottom: 32 }}>
             <h1
               style={{
-                fontFamily: 'var(--font-jetbrains-mono), monospace',
+                fontFamily: 'var(--font-ui)',
                 fontSize: 32,
                 fontWeight: 700,
                 color: '#d4a04a',
@@ -740,7 +748,7 @@ export default function AppShell() {
           <div style={{ marginBottom: 20 }}>
             <p
               style={{
-                fontFamily: 'var(--font-jetbrains-mono), monospace',
+                fontFamily: 'var(--font-ui)',
                 fontSize: 11,
                 color: 'var(--text-muted)',
                 marginBottom: 10,
@@ -790,7 +798,7 @@ export default function AppShell() {
                 borderRadius: 8,
                 background: '#d4a04a',
                 color: '#0d0d0d',
-                fontFamily: 'var(--font-jetbrains-mono), monospace',
+                fontFamily: 'var(--font-ui)',
                 fontSize: 13,
                 fontWeight: 600,
                 border: 'none',
@@ -814,7 +822,7 @@ export default function AppShell() {
                 border: 'none',
                 cursor: 'pointer',
                 fontSize: 12,
-                fontFamily: 'var(--font-jetbrains-mono), monospace',
+                fontFamily: 'var(--font-ui)',
                 textDecoration: 'underline',
                 textUnderlineOffset: 3,
                 transition: 'color 0.12s',
@@ -859,7 +867,7 @@ export default function AppShell() {
             background: 'var(--accent, #d4a04a)',
             color: '#0d0d0d',
             fontSize: 12,
-            fontFamily: 'var(--font-jetbrains-mono), monospace',
+            fontFamily: 'var(--font-ui)',
             fontWeight: 500,
           }}
         >
@@ -991,7 +999,7 @@ export default function AppShell() {
             style={{
               background: 'var(--surface)', border: '1px solid var(--border)',
               borderRadius: 16, padding: '36px 48px', maxWidth: 620,
-              fontFamily: 'var(--font-jetbrains-mono), monospace',
+              fontFamily: 'var(--font-ui)',
             }}
             onClick={e => e.stopPropagation()}
           >

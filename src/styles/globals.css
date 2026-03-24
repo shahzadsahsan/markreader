@@ -37,6 +37,12 @@
   --font-jetbrains-mono: 'JetBrains Mono', 'Courier New', monospace;
   --font-source-serif-4: 'Source Serif 4', Georgia, 'Times New Roman', serif;
 
+  /* Typography preset variables (overridden by JS) */
+  --font-heading: 'Source Serif 4', Georgia, serif;
+  --font-body: 'Source Serif 4', Georgia, serif;
+  --font-ui: -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', 'SF Mono', Menlo, monospace;
+
   /* Parchment Dusk — semantic prose coloring (bolder) */
   --prose-h1: #f5e6c8;
   --prose-h2: #e8d5a3;
@@ -67,13 +73,17 @@
 html {
   background: var(--bg);
   color-scheme: dark;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 body {
   background: radial-gradient(ellipse at 50% 0%, var(--bg) 0%, var(--bg-deep) 100%);
   color: var(--text);
-  font-family: var(--font-source-serif-4), Georgia, 'Times New Roman', serif;
+  font-family: var(--font-body), Georgia, 'Times New Roman', serif;
   min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 /* Custom scrollbar */
@@ -102,19 +112,21 @@ body {
   max-width: 720px;
   margin: 0 auto;
   padding: 2rem 1.5rem 4rem;
-  font-size: 18px;
-  line-height: 1.7;
+  font-family: var(--font-body);
+  font-size: var(--prose-font-size, 18px);
+  line-height: var(--prose-line-height, 1.7);
+  letter-spacing: var(--prose-letter-spacing, normal);
   color: var(--text);
 }
 
-/* Headings — JetBrains Mono */
+/* Headings — uses typography preset */
 .prose-reader h1,
 .prose-reader h2,
 .prose-reader h3,
 .prose-reader h4,
 .prose-reader h5,
 .prose-reader h6 {
-  font-family: var(--font-jetbrains-mono), 'Courier New', monospace;
+  font-family: var(--font-heading);
   font-weight: 600;
   color: var(--text);
   margin-top: 2rem;

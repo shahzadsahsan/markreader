@@ -102,7 +102,7 @@ function FolderGroup({
         <span
           className="flex-1 truncate text-xs"
           style={{
-            fontFamily: 'var(--font-jetbrains-mono), monospace',
+            fontFamily: 'var(--font-ui)',
             fontWeight: depth === 0 ? 600 : 400,
             color: isExcluded
               ? 'var(--text-muted)'

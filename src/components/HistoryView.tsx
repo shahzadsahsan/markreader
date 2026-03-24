@@ -19,7 +19,7 @@ export function HistoryView({
   if (files.length === 0) {
     return (
       <div className="p-4 text-center" style={{ color: 'var(--text-muted)' }}>
-        <p className="text-sm" style={{ fontFamily: 'var(--font-jetbrains-mono), monospace' }}>No history yet</p>
+        <p className="text-sm" style={{ fontFamily: 'var(--font-ui)' }}>No history yet</p>
         <p className="text-xs mt-1">Files you open will appear here</p>
       </div>
     );

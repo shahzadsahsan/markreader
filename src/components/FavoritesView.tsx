@@ -52,7 +52,7 @@ export function FavoritesView({
   if (!hasStarredFiles && !hasStarredFolders) {
     return (
       <div className="p-4 text-center" style={{ color: 'var(--text-muted)' }}>
-        <p className="text-sm" style={{ fontFamily: 'var(--font-jetbrains-mono), monospace' }}>No favorites yet</p>
+        <p className="text-sm" style={{ fontFamily: 'var(--font-ui)' }}>No favorites yet</p>
         <p className="text-xs mt-1">Star files with <code style={{ fontSize: 11, padding: '1px 5px', borderRadius: 3, background: 'var(--bg)', border: '1px solid var(--border)', color: 'var(--accent)' }}>s</code> or click {'\u2606'} to see them here</p>
       </div>
     );
@@ -68,7 +68,7 @@ export function FavoritesView({
             style={{ borderBottom: '1px solid var(--border)' }}
           >
             <span className="text-xs font-semibold flex-1 truncate" style={{
-              fontFamily: 'var(--font-jetbrains-mono), monospace',
+              fontFamily: 'var(--font-ui)',
               color: 'var(--text)',
             }}>
               {node.name}

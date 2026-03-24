@@ -165,7 +165,7 @@ export function Sidebar({
               background: 'var(--bg)',
               color: 'var(--text)',
               border: '1px solid var(--border)',
-              fontFamily: 'var(--font-jetbrains-mono), monospace',
+              fontFamily: 'var(--font-ui)',
               outline: 'none',
             }}
           />
@@ -293,7 +293,7 @@ export function Sidebar({
               background: 'none',
               border: 'none',
               cursor: 'pointer',
-              fontFamily: 'var(--font-jetbrains-mono), monospace',
+              fontFamily: 'var(--font-ui)',
               fontSize: 10,
               color: 'var(--text-muted)',
               transition: 'color 0.12s',

@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { open } from '@tauri-apps/plugin-dialog';
 import type { FilterPresetId } from '../lib/types';
 import { api } from '../lib/api';
+import { TYPOGRAPHY_PRESETS, getTypographyPreset, applyTypographyPreset, loadSavedTypography, saveTypography } from '../lib/typography';
 
 interface PresetInfo {
   id: FilterPresetId;
@@ -26,6 +27,14 @@ export function PreferencesPanel({ open: isOpen, onClose, onPresetsChanged }: Pr
   const [loading, setLoading] = useState(true);
   const panelRef = useRef<HTMLDivElement>(null);
   const minFileLengthTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [activeTypography, setActiveTypography] = useState(() => loadSavedTypography());
+
+  const handleTypographyChange = (id: string) => {
+    setActiveTypography(id);
+    saveTypography(id);
+    const preset = getTypographyPreset(id);
+    applyTypographyPreset(preset);
+  };
 
   useEffect(() => {
     if (!isOpen) return;
@@ -111,7 +120,7 @@ export function PreferencesPanel({ open: isOpen, onClose, onPresetsChanged }: Pr
       >
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-3 border-b" style={{ borderColor: 'var(--border)' }}>
-          <h2 className="text-sm font-semibold" style={{ fontFamily: 'var(--font-jetbrains-mono), monospace', color: 'var(--text)' }}>
+          <h2 className="text-sm font-semibold" style={{ fontFamily: 'var(--font-ui)', color: 'var(--text)' }}>
             Preferences
           </h2>
           <button className="tab-btn text-xs" onClick={onClose}>{'\u2715'}</button>
@@ -127,6 +136,50 @@ export function PreferencesPanel({ open: isOpen, onClose, onPresetsChanged }: Pr
             </div>
           ) : (
             <>
+              {/* Typography presets */}
+              <div className="px-5 py-4 border-b" style={{ borderColor: 'var(--border)' }}>
+                <h3 className="text-xs font-medium uppercase tracking-wider mb-3" style={{ color: 'var(--text-muted)' }}>
+                  Typography
+                </h3>
+                <div className="grid grid-cols-5 gap-2">
+                  {TYPOGRAPHY_PRESETS.map(tp => {
+                    const isActive = activeTypography === tp.id;
+                    return (
+                      <button
+                        key={tp.id}
+                        onClick={() => handleTypographyChange(tp.id)}
+                        className="flex flex-col items-center gap-1.5 px-2 py-2.5 rounded-lg transition-colors text-center"
+                        style={{
+                          border: `1.5px solid ${isActive ? 'var(--accent)' : 'var(--border)'}`,
+                          background: isActive ? 'var(--active-bg)' : 'transparent',
+                          cursor: 'pointer',
+                        }}
+                      >
+                        <span
+                          className="text-[10px] font-medium"
+                          style={{
+                            fontFamily: 'var(--font-ui)',
+                            color: isActive ? 'var(--accent)' : 'var(--text)',
+                          }}
+                        >
+                          {tp.label}
+                        </span>
+                        <span
+                          className="text-[9px] leading-tight"
+                          style={{
+                            fontFamily: tp.vars['--font-body'],
+                            color: 'var(--text-muted)',
+                            letterSpacing: tp.vars['--prose-letter-spacing'] || 'normal',
+                          }}
+                        >
+                          The quick brown fox
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
               {/* Hidden file filters */}
               <div className="px-5 py-4">
                 <div className="flex items-baseline justify-between mb-2">
@@ -147,7 +200,7 @@ export function PreferencesPanel({ open: isOpen, onClose, onPresetsChanged }: Pr
                   style={{ border: `1px solid ${minFileLength > 0 ? 'var(--accent)' : 'var(--border)'}`, background: minFileLength > 0 ? 'var(--active-bg)' : 'transparent' }}
                 >
                   <div className="flex items-center justify-between mb-1.5">
-                    <span className="text-xs font-medium" style={{ fontFamily: 'var(--font-jetbrains-mono), monospace', color: 'var(--text)' }}>
+                    <span className="text-xs font-medium" style={{ fontFamily: 'var(--font-ui)', color: 'var(--text)' }}>
                       Minimum file size
                     </span>
                     <span className="text-[10px]" style={{ color: minFileLength > 0 ? 'var(--accent)' : 'var(--text-muted)' }}>
@@ -197,7 +250,7 @@ export function PreferencesPanel({ open: isOpen, onClose, onPresetsChanged }: Pr
                       </span>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2">
-                          <span className="text-xs font-medium" style={{ fontFamily: 'var(--font-jetbrains-mono), monospace', color: 'var(--text)' }}>
+                          <span className="text-xs font-medium" style={{ fontFamily: 'var(--font-ui)', color: 'var(--text)' }}>
                             {preset.label}
                           </span>
                           {preset.matchCount > 0 && (

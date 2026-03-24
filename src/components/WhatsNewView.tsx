@@ -60,7 +60,7 @@ export function WhatsNewView({
         </div>
         <p
           style={{
-            fontFamily: 'var(--font-jetbrains-mono), monospace',
+            fontFamily: 'var(--font-ui)',
             fontSize: 13,
             color: 'var(--text-muted)',
             marginBottom: 4,
@@ -82,7 +82,7 @@ export function WhatsNewView({
         className="px-3 py-2 border-b"
         style={{
           borderColor: 'var(--border)',
-          fontFamily: 'var(--font-jetbrains-mono), monospace',
+          fontFamily: 'var(--font-ui)',
         }}
       >
         <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>
@@ -106,7 +106,7 @@ export function WhatsNewView({
               <div
                 className="px-3 py-1.5 flex items-center justify-between"
                 style={{
-                  fontFamily: 'var(--font-jetbrains-mono), monospace',
+                  fontFamily: 'var(--font-ui)',
                   fontSize: 11,
                   color: 'var(--text-muted)',
                   background: 'var(--bg)',
@@ -155,7 +155,7 @@ export function WhatsNewView({
               <div
                 className="px-3 py-1.5 flex items-center justify-between"
                 style={{
-                  fontFamily: 'var(--font-jetbrains-mono), monospace',
+                  fontFamily: 'var(--font-ui)',
                   fontSize: 11,
                   color: 'var(--text-muted)',
                   background: 'var(--bg)',

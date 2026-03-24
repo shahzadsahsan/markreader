@@ -52,7 +52,7 @@ export function CollectionsView({
           className="flex items-center gap-1.5 px-3 py-2 w-full text-left border-b"
           style={{
             borderColor: 'var(--border)',
-            fontFamily: 'var(--font-jetbrains-mono), monospace',
+            fontFamily: 'var(--font-ui)',
             fontSize: 11,
             color: 'var(--text-muted)',
             background: 'none',
