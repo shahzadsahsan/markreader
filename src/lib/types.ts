@@ -1,4 +1,4 @@
-// MarkScout — Core Types
+// MarkScout — Core Types (Tauri frontend)
 
 export type SidebarView = 'recents' | 'folders' | 'favorites';
 
@@ -31,43 +31,57 @@ export interface FilterConfig {
 }
 
 // Filter presets — toggleable categories
-// Generic presets (useful for any developer)
-// Claude Code presets (for Claude Code users)
 export type FilterPresetId =
-  | 'readme-files'        // README.md files
-  | 'license-files'       // LICENSE, CONTRIBUTING
-  | 'changelog-files'     // CHANGELOG, CHANGES
-  | 'dotfile-configs'     // .github/*.md
-  | 'claude-plugins'      // Plugin/agent docs
-  | 'claude-skills'       // SKILL.md files
-  | 'claude-sessions'     // RVRY/deepthink sessions
-  | 'claude-pipeline'     // GSD pipeline artifacts
-  | 'claude-memory'       // Project memory files
-  | 'claude-plans'        // Plan files
-  | 'claude-cognition';   // Scheduled tasks, cognition
+  | 'readme-files'
+  | 'license-files'
+  | 'changelog-files'
+  | 'dotfile-configs'
+  | 'claude-plugins'
+  | 'claude-skills'
+  | 'claude-sessions'
+  | 'claude-pipeline'
+  | 'claude-memory'
+  | 'claude-plans'
+  | 'claude-cognition';
 
 export interface FilterPreset {
   id: FilterPresetId;
   label: string;
   description: string;
-  matchCount?: number;       // Populated at runtime
-  pathPatterns: string[];    // Path substring matches
-  namePatterns: string[];    // Filename regex patterns
+  matchCount?: number;
+  pathPatterns: string[];
+  namePatterns: string[];
 }
 
 export interface PreferencesState {
-  activePresets: FilterPresetId[];  // Which presets are enabled (filtering out)
-  watchDirs: string[];               // User-added watch directories
-  minFileLength?: number;            // Hide files shorter than this many bytes (0 = disabled)
+  activePresets: FilterPresetId[];
+  watchDirs: string[];
+  minFileLength?: number;
+}
+
+export interface PresetInfo {
+  id: FilterPresetId;
+  label: string;
+  description: string;
+  category: string;
+  active: boolean;
+  matchCount: number;
+}
+
+export interface PreferencesResponse {
+  presets: PresetInfo[];
+  customWatchDirs: string[];
+  minFileLength?: number;
+  excludedFolders: string[];
 }
 
 export interface AppState {
   version: 2;
-  instanceId: string;           // UUID per machine
+  instanceId: string;
   lastSyncedAt: number | null;
 
   favorites: FavoriteEntry[];
-  favoriteFolders: string[];       // Folder paths starred by user (sorted to top)
+  favoriteFolders: string[];
   history: HistoryEntry[];
 
   filters: FilterConfig;
@@ -78,40 +92,38 @@ export interface AppState {
     sidebarWidth: number;
     sidebarCollapsed: boolean;
     lastSelectedPath: string | null;
-    collapsedGroups: string[];     // Folder paths that are collapsed (all start collapsed)
-    expandedGroups: string[];      // Folder paths user has expanded (persisted)
-    zoomLevel: number;             // Text magnification (0.85, 1, 1.25, 1.5, 2)
-    fillScreen: boolean;           // Expand prose to fill screen width
-    contentSearch: boolean;         // Search file contents instead of filenames
+    collapsedGroups: string[];
+    expandedGroups: string[];
+    zoomLevel: number;
+    fillScreen: boolean;
+    contentSearch: boolean;
   };
 }
 
-// SSE event types
-export type SSEEventType = 'file-added' | 'file-changed' | 'file-removed' | 'scan-complete';
-
-export interface SSEFileEvent {
+// Tauri event types (emitted via app_handle.emit("file-event", ...))
+export interface TauriFileEvent {
   type: 'file-added' | 'file-changed';
   data: FileEntry;
 }
 
-export interface SSERemoveEvent {
+export interface TauriRemoveEvent {
   type: 'file-removed';
   data: { path: string };
 }
 
-export interface SSEScanCompleteEvent {
+export interface TauriScanCompleteEvent {
   type: 'scan-complete';
   data: { totalFiles: number; filteredCount: number };
 }
 
-export type SSEEvent = SSEFileEvent | SSERemoveEvent | SSEScanCompleteEvent;
+export type TauriEvent = TauriFileEvent | TauriRemoveEvent | TauriScanCompleteEvent;
 
 // Search result type
 export interface SearchResult {
   file: FileEntry;
-  snippet: string;      // "...context around **match** here..."
-  matchCount: number;    // total occurrences in file
-  lineNumber: number;    // first match line number
+  snippet: string;
+  matchCount: number;
+  lineNumber: number;
 }
 
 // API response types
@@ -124,14 +136,15 @@ export interface FileContentResponse {
   modifiedAt: number;
   size: number;
   wordCount: number;
-  readingTime: number;    // Minutes
+  readingTime: number;
   isFavorite: boolean;
+  contentHash: string;
 }
 
 export interface FolderNode {
   name: string;
-  path: string;           // Full path to this folder
+  path: string;
   files: FileEntry[];
   children: FolderNode[];
-  fileCount: number;      // Total files in this subtree
+  fileCount: number;
 }

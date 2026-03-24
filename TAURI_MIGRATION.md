@@ -3,8 +3,15 @@
 ## Current Status
 
 **Branch:** `tauri-rewrite` (off `main`)
-**Phase:** 1 of 7 — Scaffold (partially complete)
+**Phase:** 7 of 7 — BUILD COMPLETE
 **Last updated:** 2026-03-24
+
+### Build Results
+- **DMG:** 11 MB (was 160 MB with Electron — 93% reduction)
+- **App:** 18 MB (was ~500 MB with Electron — 96% reduction)
+- **Rust compilation:** 0 errors (11 warnings for unused helper methods)
+- **TypeScript compilation:** 0 errors
+- **Output:** `src-tauri/target/release/bundle/dmg/MarkScout_1.0.0_aarch64.dmg`
 
 ---
 
