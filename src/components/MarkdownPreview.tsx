@@ -274,6 +274,9 @@ export function MarkdownPreview({
   const [showPalettePicker, setShowPalettePicker] = useState(false);
   const paletteBtnRef = useRef<HTMLButtonElement>(null);
   const paletteDropdownRef = useRef<HTMLDivElement>(null);
+  const [showOverflow, setShowOverflow] = useState(false);
+  const overflowBtnRef = useRef<HTMLButtonElement>(null);
+  const overflowDropdownRef = useRef<HTMLDivElement>(null);
 
   // Close palette picker on click outside
   useEffect(() => {
@@ -289,6 +292,21 @@ export function MarkdownPreview({
     document.addEventListener('mousedown', handler);
     return () => document.removeEventListener('mousedown', handler);
   }, [showPalettePicker]);
+
+  // Close overflow menu on click outside
+  useEffect(() => {
+    if (!showOverflow) return;
+    const handler = (e: MouseEvent) => {
+      if (
+        overflowDropdownRef.current && !overflowDropdownRef.current.contains(e.target as Node) &&
+        overflowBtnRef.current && !overflowBtnRef.current.contains(e.target as Node)
+      ) {
+        setShowOverflow(false);
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [showOverflow]);
 
   const revealInFinder = useCallback(() => {
     if (!fileContent?.path) return;
@@ -489,14 +507,6 @@ export function MarkdownPreview({
               >
                 {fileContent.path}
               </span>
-              <button
-                className="zoom-btn shrink-0"
-                onClick={revealInFinder}
-                title="Reveal in Finder"
-                style={{ fontSize: 'var(--text-xs)', padding: '1px 5px', display: 'flex', alignItems: 'center', gap: 3 }}
-              >
-                <span>{'\u2B21'}</span><span>Finder</span>
-              </button>
             </div>
             <div className="flex items-center gap-3 text-xs" style={{ color: 'var(--text-muted)' }}>
               <span>Modified {formatRelativeTime(fileContent.modifiedAt)}</span>
@@ -513,35 +523,15 @@ export function MarkdownPreview({
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
-            {/* Zoom controls */}
+          <div className="flex items-center gap-1.5">
+            {/* Compact zoom */}
             <div className="zoom-controls">
               <button className="zoom-btn" onClick={onZoomOut} title="Zoom out (Cmd+-)">A{'\u2212'}</button>
               <button className="zoom-label" onClick={onZoomReset} title="Reset zoom (Cmd+0)">{zoomLabel}</button>
               <button className="zoom-btn" onClick={onZoomIn} title="Zoom in (Cmd+=)">A+</button>
             </div>
 
-            {/* Fill screen toggle */}
-            <button
-              className="zoom-btn"
-              onClick={onToggleFillScreen}
-              title="Fill screen (Cmd+Shift+F)"
-              style={{ display: 'flex', alignItems: 'center', gap: 3, ...(fillScreen ? { borderColor: 'var(--accent)', color: 'var(--accent)' } : {}) }}
-            >
-              <span>{'\u26F6'}</span><span>Fill</span>
-            </button>
-
-            {/* Palette picker */}
-            <button
-              ref={paletteBtnRef}
-              className="zoom-btn"
-              onClick={() => setShowPalettePicker(p => !p)}
-              title="Color palette"
-              style={{ display: 'flex', alignItems: 'center', gap: 3, ...(showPalettePicker ? { borderColor: 'var(--accent)', color: 'var(--accent)' } : {}) }}
-            >
-              <span>{'\u25D4'}</span><span>Theme</span>
-            </button>
-
+            {/* Star */}
             <button
               className={`star-btn text-lg ${fileContent.isFavorite ? 'starred' : ''}`}
               onClick={() => onToggleStar(fileContent.path)}
@@ -549,6 +539,72 @@ export function MarkdownPreview({
             >
               {fileContent.isFavorite ? '\u2605' : '\u2606'}
             </button>
+
+            {/* Overflow menu */}
+            <div style={{ position: 'relative' }}>
+              <button
+                ref={overflowBtnRef}
+                className="zoom-btn"
+                onClick={() => { setShowOverflow(p => !p); setShowPalettePicker(false); }}
+                title="More actions"
+                style={{ padding: '2px 6px', ...(showOverflow ? { borderColor: 'var(--accent)', color: 'var(--accent)' } : {}) }}
+              >
+                {'\u22EF'}
+              </button>
+              {showOverflow && overflowBtnRef.current && (() => {
+                const rect = overflowBtnRef.current!.getBoundingClientRect();
+                return (
+                  <div
+                    ref={overflowDropdownRef}
+                    style={{
+                      position: 'fixed',
+                      top: rect.bottom + 6,
+                      right: window.innerWidth - rect.right,
+                      width: 200,
+                      background: 'var(--surface, #161616)',
+                      border: '1px solid var(--border, #2a2a2a)',
+                      borderRadius: 8,
+                      padding: '4px 0',
+                      zIndex: 9999,
+                      boxShadow: '0 8px 24px rgba(0,0,0,0.6)',
+                      fontFamily: 'var(--font-ui)',
+                      fontSize: 'var(--text-sm)',
+                    }}
+                  >
+                    <button
+                      className="overflow-item"
+                      onClick={() => { onToggleFillScreen(); setShowOverflow(false); }}
+                    >
+                      <span>{fillScreen ? '\u2713' : '\u26F6'}</span>
+                      <span>Fill screen</span>
+                      <span style={{ marginLeft: 'auto', fontSize: 'var(--text-xs)', opacity: 0.5 }}>{'\u2318\u21E7F'}</span>
+                    </button>
+                    <button
+                      className="overflow-item"
+                      onClick={() => { setShowOverflow(false); setShowPalettePicker(p => !p); }}
+                    >
+                      <span>{'\u25D4'}</span>
+                      <span>Theme</span>
+                    </button>
+                    <div style={{ height: 1, background: 'var(--border)', margin: '4px 0' }} />
+                    <button
+                      className="overflow-item"
+                      onClick={() => { revealInFinder(); setShowOverflow(false); }}
+                    >
+                      <span>{'\u2B21'}</span>
+                      <span>Reveal in Finder</span>
+                    </button>
+                    <button
+                      className="overflow-item"
+                      onClick={() => { navigator.clipboard.writeText(fileContent.path); setShowOverflow(false); }}
+                    >
+                      <span>{'\u2398'}</span>
+                      <span>Copy path</span>
+                    </button>
+                  </div>
+                );
+              })()}
+            </div>
           </div>
         </div>
       </div>

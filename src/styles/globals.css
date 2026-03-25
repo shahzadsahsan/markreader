@@ -425,6 +425,25 @@ pre:hover .copy-btn {
   color: #f87171;
 }
 
+/* Overflow menu items */
+.overflow-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 6px 12px;
+  border: none;
+  background: none;
+  color: var(--text);
+  font-size: var(--text-sm);
+  font-family: var(--font-ui);
+  cursor: pointer;
+  text-align: left;
+}
+.overflow-item:hover {
+  background: rgba(255,255,255,0.05);
+}
+
 /* Excluded folder */
 .folder-excluded {
   opacity: 0.35;
