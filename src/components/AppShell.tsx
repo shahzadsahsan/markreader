@@ -980,6 +980,7 @@ export default function AppShell() {
             onToggleFillScreen={toggleFillScreen}
             activePalette={activePalette}
             onChangePalette={changePalette}
+            onOpenPreferences={() => setPrefsOpen(true)}
           />
         </main>
       </div>

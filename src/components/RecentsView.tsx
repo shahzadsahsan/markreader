@@ -88,8 +88,9 @@ export function RecentsView({
             });
           }}
           title="Group by folder"
+          style={{ display: 'flex', alignItems: 'center', gap: 3 }}
         >
-          {'\uD83D\uDCC2'}
+          <span>{'\uD83D\uDCC2'}</span><span>Folders</span>
         </button>
       </div>
 

@@ -34,9 +34,9 @@
   --sidebar-width: 280px;
 
   /* Type scale — chrome sizes (prose sizes stay in .prose-reader) */
-  --text-xs: 10px;
-  --text-sm: 12px;
-  --text-base: 14px;
+  --text-xs: 11px;
+  --text-sm: 13px;
+  --text-base: 15px;
 
   /* Font family variables (replaces next/font CSS vars) */
   --font-jetbrains-mono: 'JetBrains Mono', 'Courier New', monospace;

@@ -276,6 +276,7 @@ interface MarkdownPreviewProps {
   onToggleFillScreen: () => void;
   activePalette: PaletteId;
   onChangePalette: (id: PaletteId) => void;
+  onOpenPreferences: () => void;
 }
 
 function formatRelativeTime(epochMs: number): string {
@@ -314,7 +315,7 @@ export function MarkdownPreview({
   fileContent, loading, onToggleStar, onSelectFile, knownPaths,
   zoomLevel, fillScreen,
   onZoomIn, onZoomOut, onZoomReset, onToggleFillScreen,
-  activePalette, onChangePalette,
+  activePalette, onChangePalette, onOpenPreferences,
 }: MarkdownPreviewProps) {
   const [showPalettePicker, setShowPalettePicker] = useState(false);
   const paletteBtnRef = useRef<HTMLButtonElement>(null);
@@ -576,6 +577,16 @@ export function MarkdownPreview({
               <button className="zoom-btn" onClick={onZoomIn} title="Zoom in (Cmd+=)">A+</button>
             </div>
 
+            {/* Fill screen */}
+            <button
+              className="zoom-btn"
+              onClick={onToggleFillScreen}
+              title="Fill screen (Cmd+Shift+F)"
+              style={{ display: 'flex', alignItems: 'center', gap: 3, ...(fillScreen ? { borderColor: 'var(--accent)', color: 'var(--accent)' } : {}) }}
+            >
+              <span>{'\u26F6'}</span>
+            </button>
+
             {/* Star */}
             <button
               className={`star-btn text-lg ${fileContent.isFavorite ? 'starred' : ''}`}
@@ -618,20 +629,11 @@ export function MarkdownPreview({
                   >
                     <button
                       className="overflow-item"
-                      onClick={() => { onToggleFillScreen(); setShowOverflow(false); }}
-                    >
-                      <span>{fillScreen ? '\u2713' : '\u26F6'}</span>
-                      <span>Fill screen</span>
-                      <span style={{ marginLeft: 'auto', fontSize: 'var(--text-xs)', opacity: 0.5 }}>{'\u2318\u21E7F'}</span>
-                    </button>
-                    <button
-                      className="overflow-item"
                       onClick={() => { setShowOverflow(false); setShowPalettePicker(p => !p); }}
                     >
                       <span>{'\u25D4'}</span>
                       <span>Theme</span>
                     </button>
-                    <div style={{ height: 1, background: 'var(--border)', margin: '4px 0' }} />
                     <button
                       className="overflow-item"
                       onClick={() => { revealInFinder(); setShowOverflow(false); }}
@@ -645,6 +647,15 @@ export function MarkdownPreview({
                     >
                       <span>{'\u2398'}</span>
                       <span>Copy path</span>
+                    </button>
+                    <div style={{ height: 1, background: 'var(--border)', margin: '4px 0' }} />
+                    <button
+                      className="overflow-item"
+                      onClick={() => { onOpenPreferences(); setShowOverflow(false); }}
+                    >
+                      <span>{'\u2699'}</span>
+                      <span>Settings</span>
+                      <span style={{ marginLeft: 'auto', fontSize: 'var(--text-xs)', opacity: 0.5 }}>{'\u2318,'}</span>
                     </button>
                   </div>
                 );
