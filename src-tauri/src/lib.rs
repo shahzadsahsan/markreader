@@ -177,23 +177,37 @@ pub fn run() {
                     }
                 }
 
-                // Save window state on close
+                // Window event logging + state save
                 let window_clone = window.clone();
                 window.on_window_event(move |event| {
-                    if let tauri::WindowEvent::CloseRequested { .. } = event {
-                        let mut ws = WindowState::default();
-                        if let Ok(pos) = window_clone.outer_position() {
-                            ws.x = pos.x;
-                            ws.y = pos.y;
+                    match event {
+                        tauri::WindowEvent::CloseRequested { .. } => {
+                            eprintln!("[MarkScout] window CloseRequested");
+                            let mut ws = WindowState::default();
+                            if let Ok(pos) = window_clone.outer_position() {
+                                ws.x = pos.x;
+                                ws.y = pos.y;
+                            }
+                            if let Ok(size) = window_clone.outer_size() {
+                                ws.width = size.width;
+                                ws.height = size.height;
+                            }
+                            if let Ok(maximized) = window_clone.is_maximized() {
+                                ws.maximized = maximized;
+                            }
+                            save_window_state(&ws);
                         }
-                        if let Ok(size) = window_clone.outer_size() {
-                            ws.width = size.width;
-                            ws.height = size.height;
+                        tauri::WindowEvent::Focused(focused) => {
+                            eprintln!("[MarkScout] window Focused={}", focused);
                         }
-                        if let Ok(maximized) = window_clone.is_maximized() {
-                            ws.maximized = maximized;
+                        tauri::WindowEvent::Moved(_) => {}
+                        tauri::WindowEvent::Resized(size) => {
+                            eprintln!("[MarkScout] window Resized={}x{}", size.width, size.height);
                         }
-                        save_window_state(&ws);
+                        tauri::WindowEvent::Destroyed => {
+                            eprintln!("[MarkScout] window Destroyed");
+                        }
+                        _ => {}
                     }
                 });
             }

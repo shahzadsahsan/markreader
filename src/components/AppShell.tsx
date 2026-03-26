@@ -83,17 +83,77 @@ export default function AppShell() {
     applyTypographyPreset(preset);
   }, []);
 
-  // --- Fix blank screen after macOS sleep/wake ---
+  // --- Blank screen diagnostics + recovery ---
   useEffect(() => {
+    const log = (msg: string) => {
+      const entry = `[${new Date().toISOString()}] ${msg}`;
+      console.log(`[MarkScout] ${entry}`);
+      try {
+        const key = 'markscout-diagnostic-log';
+        const prev = localStorage.getItem(key) || '';
+        // Keep last 100 lines
+        const lines = prev.split('\n').filter(Boolean).slice(-99);
+        lines.push(entry);
+        localStorage.setItem(key, lines.join('\n'));
+      } catch { /* storage full — ignore */ }
+    };
+
+    log(`App mounted, v0.6.0, document.hidden=${document.hidden}`);
+
+    // Track visibility changes (sleep/wake, tab switch, app hide)
     const handleVisibility = () => {
+      log(`visibilitychange: hidden=${document.hidden}`);
       if (!document.hidden) {
-        // Force WebView repaint after wake from sleep
+        // Force WebView repaint
         document.body.style.opacity = '0.999';
-        requestAnimationFrame(() => { document.body.style.opacity = '1'; });
+        requestAnimationFrame(() => {
+          document.body.style.opacity = '1';
+          log('repaint forced via opacity toggle');
+        });
       }
     };
+
+    // Track WebView focus/blur (macOS app activate/deactivate)
+    const handleFocus = () => log('window focus');
+    const handleBlur = () => log('window blur');
+
+    // Track resize (can trigger blank in some WebKit builds)
+    const handleResize = () => log(`resize: ${window.innerWidth}x${window.innerHeight}`);
+
+    // Periodic heartbeat — detect if JS stops running
+    let heartbeatCount = 0;
+    const heartbeat = setInterval(() => {
+      heartbeatCount++;
+      // Log every 5 minutes (300 beats at 1s)
+      if (heartbeatCount % 300 === 0) {
+        log(`heartbeat #${heartbeatCount}, body.children=${document.body.children.length}, root.innerHTML.length=${document.getElementById('root')?.innerHTML.length ?? 'N/A'}`);
+      }
+    }, 1000);
+
+    // Catch unhandled errors that might blank the screen
+    const handleError = (e: ErrorEvent) => {
+      log(`UNCAUGHT ERROR: ${e.message} at ${e.filename}:${e.lineno}:${e.colno}`);
+    };
+    const handleRejection = (e: PromiseRejectionEvent) => {
+      log(`UNHANDLED REJECTION: ${String(e.reason)}`);
+    };
+
     document.addEventListener('visibilitychange', handleVisibility);
-    return () => document.removeEventListener('visibilitychange', handleVisibility);
+    window.addEventListener('focus', handleFocus);
+    window.addEventListener('blur', handleBlur);
+    window.addEventListener('resize', handleResize);
+    window.addEventListener('error', handleError);
+    window.addEventListener('unhandledrejection', handleRejection);
+
+    return () => {
+      clearInterval(heartbeat);
+      document.removeEventListener('visibilitychange', handleVisibility);
+      window.removeEventListener('focus', handleFocus);
+      window.removeEventListener('blur', handleBlur);
+      window.removeEventListener('resize', handleResize);
+      window.removeEventListener('error', handleError);
+      window.removeEventListener('unhandledrejection', handleRejection);
+    };
   }, []);
 
   // --- Restore persisted UI state on mount ---
