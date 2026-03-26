@@ -551,7 +551,7 @@ export function MarkdownPreview({
                   color: 'var(--text-muted)',
                 }}
               >
-                {fileContent.path}
+                {fileContent?.path}
               </span>
             </div>
             <div className="flex items-center gap-3 text-xs" style={{ color: 'var(--text-muted)' }}>
@@ -590,7 +590,7 @@ export function MarkdownPreview({
             {/* Star */}
             <button
               className={`star-btn text-lg ${fileContent.isFavorite ? 'starred' : ''}`}
-              onClick={() => onToggleStar(fileContent.path)}
+              onClick={() => fileContent && onToggleStar(fileContent.path)}
               title={fileContent.isFavorite ? 'Remove star' : 'Star file'}
             >
               {fileContent.isFavorite ? '\u2605' : '\u2606'}
@@ -643,7 +643,7 @@ export function MarkdownPreview({
                     </button>
                     <button
                       className="overflow-item"
-                      onClick={() => { navigator.clipboard.writeText(fileContent.path); setShowOverflow(false); }}
+                      onClick={() => { if (fileContent) navigator.clipboard.writeText(fileContent.path); setShowOverflow(false); }}
                     >
                       <span>{'\u2398'}</span>
                       <span>Copy path</span>
