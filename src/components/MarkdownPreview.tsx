@@ -321,6 +321,7 @@ export function MarkdownPreview({
   const paletteBtnRef = useRef<HTMLButtonElement>(null);
   const paletteDropdownRef = useRef<HTMLDivElement>(null);
   const [showOverflow, setShowOverflow] = useState(false);
+  const [copied, setCopied] = useState(false);
   const overflowBtnRef = useRef<HTMLButtonElement>(null);
   const overflowDropdownRef = useRef<HTMLDivElement>(null);
 
@@ -549,7 +550,10 @@ export function MarkdownPreview({
                 style={{
                   fontFamily: 'var(--font-jetbrains-mono), monospace',
                   color: 'var(--text-muted)',
+                  cursor: 'pointer',
                 }}
+                onClick={revealInFinder}
+                title="Reveal in Finder"
               >
                 {fileContent?.path}
               </span>
@@ -582,11 +586,14 @@ export function MarkdownPreview({
               onClick={() => {
                 if (fileContent?.content) {
                   navigator.clipboard.writeText(fileContent.content);
+                  setCopied(true);
+                  setTimeout(() => setCopied(false), 1200);
                 }
               }}
               title="Copy file contents"
+              style={copied ? { borderColor: 'var(--accent)', color: 'var(--accent)' } : {}}
             >
-              {'\u2398'}
+              {copied ? '\u2713' : '\u29C9'}
             </button>
 
             {/* Fill screen */}
@@ -594,18 +601,19 @@ export function MarkdownPreview({
               className="zoom-btn"
               onClick={onToggleFillScreen}
               title="Fill screen (Cmd+Shift+F)"
-              style={{ display: 'flex', alignItems: 'center', gap: 3, ...(fillScreen ? { borderColor: 'var(--accent)', color: 'var(--accent)' } : {}) }}
+              style={fillScreen ? { borderColor: 'var(--accent)', color: 'var(--accent)' } : {}}
             >
-              <span>{'\u26F6'}</span>
+              {'\u26F6'}
             </button>
 
             {/* Star */}
             <button
-              className={`star-btn text-lg ${fileContent.isFavorite ? 'starred' : ''}`}
+              className="zoom-btn"
               onClick={() => fileContent && onToggleStar(fileContent.path)}
-              title={fileContent.isFavorite ? 'Remove star' : 'Star file'}
+              title={fileContent?.isFavorite ? 'Remove star' : 'Star file'}
+              style={fileContent?.isFavorite ? { borderColor: 'var(--accent)', color: 'var(--accent)' } : {}}
             >
-              {fileContent.isFavorite ? '\u2605' : '\u2606'}
+              {fileContent?.isFavorite ? '\u2605' : '\u2606'}
             </button>
 
             {/* Overflow menu */}
