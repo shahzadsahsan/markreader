@@ -563,19 +563,12 @@ export default function AppShell() {
           case 'file-added': {
             const entry = payload.data as FileEntry | undefined;
             if (!entry?.path) break;
-            if (scanComplete) {
-              setFiles(prev => {
-                const filtered = prev.filter(f => f?.path !== entry.path);
-                return [entry, ...filtered].sort((a, b) => b.modifiedAt - a.modifiedAt);
-              });
-              setTotalFiles(prev => prev + 1);
-            } else {
-              pendingFilesRef.current.push(entry);
-              if (!batchTimerRef.current) {
-                batchTimerRef.current = setInterval(() => {
-                  flushPendingFiles();
-                }, 500);
-              }
+            // Always batch — even after scan-complete — to avoid per-event re-renders
+            pendingFilesRef.current.push(entry);
+            if (!batchTimerRef.current) {
+              batchTimerRef.current = setInterval(() => {
+                flushPendingFiles();
+              }, 500);
             }
             break;
           }
@@ -583,9 +576,15 @@ export default function AppShell() {
           case 'file-changed': {
             const entry = payload.data as FileEntry | undefined;
             if (!entry?.path) break;
-            setFiles(prev => prev.map(f => f?.path === entry.path ? entry : f));
+            // Batch changes too — they'll be merged in flushPendingFiles
+            pendingFilesRef.current.push(entry);
+            if (!batchTimerRef.current) {
+              batchTimerRef.current = setInterval(() => {
+                flushPendingFiles();
+              }, 500);
+            }
             contentCacheRef.current.delete(entry.path);
-            // Re-fetch if currently viewing this file
+            // Re-fetch if currently viewing this file (immediate, not batched)
             if (entry.path === selectedPath) {
               fetchFileContent(entry.path);
             }
@@ -602,11 +601,13 @@ export default function AppShell() {
 
           case 'scan-complete': {
             const data = payload.data as { totalFiles: number; filteredCount: number };
+            // Flush remaining pending files from scan
+            flushPendingFiles();
+            // Clear batch timer — it will be re-created for post-scan events
             if (batchTimerRef.current) {
               clearInterval(batchTimerRef.current);
               batchTimerRef.current = null;
             }
-            flushPendingFiles();
             setTotalFiles(data.totalFiles);
             setFilteredCount(data.filteredCount);
             setScanComplete(true);
