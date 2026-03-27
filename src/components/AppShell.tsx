@@ -1015,6 +1015,7 @@ export default function AppShell() {
             onOpenPreferences={() => setPrefsOpen(true)}
             scrollContainerRef={mainRef}
             savedScrollTop={fileContent?.path ? scrollPositionsRef.current.get(fileContent.path) : undefined}
+            allFiles={safeFiles}
           />
         </main>
       </div>
