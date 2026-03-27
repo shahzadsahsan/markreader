@@ -207,8 +207,11 @@ export default function AppShell() {
 
   // (folder-dropped listener is below, after addWatchDir is defined)
 
+  // --- Sanitize files array (filter out any undefined/null entries) ---
+  const safeFiles = useMemo(() => files.filter((f): f is FileEntry => f != null && typeof f.path === 'string'), [files]);
+
   // --- Known paths for instant link navigation ---
-  const knownPaths = useMemo(() => new Set(files.map(f => f.path)), [files]);
+  const knownPaths = useMemo(() => new Set(safeFiles.map(f => f.path)), [safeFiles]);
 
   // --- Debounced search for snappy typing ---
   const [debouncedSearch, setDebouncedSearch] = useState('');
@@ -219,7 +222,7 @@ export default function AppShell() {
 
   // --- Filter files by search query + minLines ---
   const filteredFiles = useMemo(() => {
-    let result = files;
+    let result = safeFiles;
     if (minLines > 0) {
       result = result.filter(f => f.lineCount === undefined || f.lineCount >= minLines);
     }
@@ -230,7 +233,7 @@ export default function AppShell() {
       f.project.toLowerCase().includes(q) ||
       f.relativePath.toLowerCase().includes(q)
     );
-  }, [files, debouncedSearch, minLines]);
+  }, [safeFiles, debouncedSearch, minLines]);
 
   // --- Content search effect ---
   useEffect(() => {
@@ -283,7 +286,7 @@ export default function AppShell() {
         setFolders(data.folders);
       }
       if (data.files) {
-        setFiles(data.files);
+        setFiles(data.files.filter((f: FileEntry | null | undefined): f is FileEntry => f != null));
       }
 
       setTotalFiles(data.totalFiles);
@@ -350,7 +353,7 @@ export default function AppShell() {
   const toggleStar = useCallback(async (filePath: string) => {
     try {
       // Need the content hash for the command
-      const entry = files.find(f => f.path === filePath);
+      const entry = files.find(f => f?.path === filePath);
       const contentHash = entry?.contentHash || fileContent?.contentHash || '';
       const isFavorite = await api.toggleFavorite(filePath, contentHash);
 
@@ -413,7 +416,7 @@ export default function AppShell() {
     try {
       await api.removeWatchDir(dir);
       setCustomWatchDirs(prev => prev.filter(d => d !== dir));
-      setFiles(prev => prev.filter(f => !f.path.startsWith(dir)));
+      setFiles(prev => prev.filter(f => f && !f.path.startsWith(dir)));
       fetchFiles();
     } catch { /* ignore */ }
   }, [fetchFiles]);
@@ -482,10 +485,10 @@ export default function AppShell() {
     pendingFilesRef.current = [];
 
     setFiles(prev => {
-      const pathSet = new Set(prev.map(f => f.path));
-      const newFiles = pending.filter(f => !pathSet.has(f.path));
-      const updated = prev.map(f => {
-        const newer = pending.find(p => p.path === f.path);
+      const pathSet = new Set(prev.filter(Boolean).map(f => f.path));
+      const newFiles = pending.filter(f => f && !pathSet.has(f.path));
+      const updated = prev.filter(Boolean).map(f => {
+        const newer = pending.find(p => p?.path === f.path);
         return newer || f;
       });
       return [...newFiles, ...updated].sort((a, b) => b.modifiedAt - a.modifiedAt);
@@ -510,7 +513,7 @@ export default function AppShell() {
             const entry = payload.data as FileEntry;
             if (scanComplete) {
               setFiles(prev => {
-                const filtered = prev.filter(f => f.path !== entry.path);
+                const filtered = prev.filter(f => f?.path !== entry.path);
                 return [entry, ...filtered].sort((a, b) => b.modifiedAt - a.modifiedAt);
               });
               setTotalFiles(prev => prev + 1);
@@ -527,7 +530,7 @@ export default function AppShell() {
 
           case 'file-changed': {
             const entry = payload.data as FileEntry;
-            setFiles(prev => prev.map(f => f.path === entry.path ? entry : f));
+            setFiles(prev => prev.map(f => f?.path === entry.path ? entry : f));
             contentCacheRef.current.delete(entry.path);
             // Re-fetch if currently viewing this file
             if (entry.path === selectedPath) {
@@ -538,7 +541,7 @@ export default function AppShell() {
 
           case 'file-removed': {
             const { path } = payload.data as { path: string };
-            setFiles(prev => prev.filter(f => f.path !== path));
+            setFiles(prev => prev.filter(f => f?.path !== path));
             setTotalFiles(prev => Math.max(0, prev - 1));
             break;
           }
@@ -574,20 +577,20 @@ export default function AppShell() {
 
   // --- Auto-select file on first load (restore or most recent) ---
   useEffect(() => {
-    if (!scanComplete || !stateRestoredRef.current || files.length === 0) return;
+    if (!scanComplete || !stateRestoredRef.current || safeFiles.length === 0) return;
     if (fileContent) return; // Already showing a file
 
     if (selectedPath) {
-      const exists = files.some(f => f.path === selectedPath);
+      const exists = safeFiles.some(f => f.path === selectedPath);
       if (exists) {
         fetchFileContent(selectedPath);
         return;
       }
     }
     // Fall back to most recent
-    selectFile(files[0].path);
+    if (safeFiles[0]) selectFile(safeFiles[0].path);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [scanComplete, files.length]);
+  }, [scanComplete, safeFiles.length]);
 
   // --- Zoom controls ---
   const zoomIn = useCallback(() => {
