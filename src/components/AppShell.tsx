@@ -40,6 +40,7 @@ export default function AppShell() {
 
   // Refs
   const contentCacheRef = useRef<Map<string, FileContentResponse>>(new Map());
+  const scrollPositionsRef = useRef<Map<string, number>>(new Map());
   const pendingFilesRef = useRef<FileEntry[]>([]);
   const batchTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const mountedRef = useRef(true);
@@ -168,6 +169,9 @@ export default function AppShell() {
         if (data.zoomLevel !== undefined) setZoomLevel(data.zoomLevel);
         if (data.fillScreen !== undefined) setFillScreen(data.fillScreen);
         if (data.contentSearch !== undefined) setContentSearch(data.contentSearch);
+        if (data.scrollPositions) {
+          scrollPositionsRef.current = new Map(Object.entries(data.scrollPositions));
+        }
         if (data.favoriteFolders) {
           setFavoriteFolders(new Set(data.favoriteFolders));
         }
@@ -204,6 +208,21 @@ export default function AppShell() {
   useEffect(() => {
     api.recordSessionStart().catch(() => {});
   }, []);
+
+  // --- Persist scroll positions on unload ---
+  useEffect(() => {
+    const handleBeforeUnload = () => {
+      // Save current scroll position
+      if (selectedPath && mainRef.current) {
+        scrollPositionsRef.current.set(selectedPath, mainRef.current.scrollTop);
+      }
+      const obj: Record<string, number> = {};
+      scrollPositionsRef.current.forEach((v, k) => { obj[k] = v; });
+      api.saveUiState({ scrollPositions: obj }).catch(() => {});
+    };
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [selectedPath]);
 
   // (folder-dropped listener is below, after addWatchDir is defined)
 
@@ -343,11 +362,24 @@ export default function AppShell() {
     }
   }, []);
 
+  // --- Save current scroll position before navigating ---
+  const saveCurrentScroll = useCallback(() => {
+    if (selectedPath && mainRef.current) {
+      scrollPositionsRef.current.set(selectedPath, mainRef.current.scrollTop);
+      // Cap at 200
+      if (scrollPositionsRef.current.size > 200) {
+        const firstKey = scrollPositionsRef.current.keys().next().value;
+        if (firstKey) scrollPositionsRef.current.delete(firstKey);
+      }
+    }
+  }, [selectedPath]);
+
   // --- Select a file ---
   const selectFile = useCallback((filePath: string) => {
+    saveCurrentScroll();
     setSelectedPath(filePath);
     fetchFileContent(filePath);
-  }, [fetchFileContent]);
+  }, [fetchFileContent, saveCurrentScroll]);
 
   // --- Toggle star ---
   const toggleStar = useCallback(async (filePath: string) => {
@@ -981,6 +1013,8 @@ export default function AppShell() {
             activePalette={activePalette}
             onChangePalette={changePalette}
             onOpenPreferences={() => setPrefsOpen(true)}
+            scrollContainerRef={mainRef}
+            savedScrollTop={fileContent?.path ? scrollPositionsRef.current.get(fileContent.path) : undefined}
           />
         </main>
       </div>

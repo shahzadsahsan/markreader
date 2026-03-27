@@ -518,6 +518,7 @@ fn read_state_sync() -> crate::types::AppState {
             zoom_level: 1.0,
             fill_screen: false,
             content_search: false,
+            scroll_positions: std::collections::HashMap::new(),
         },
         excluded_folders: vec![],
         last_session_at: None,

@@ -277,6 +277,8 @@ interface MarkdownPreviewProps {
   activePalette: PaletteId;
   onChangePalette: (id: PaletteId) => void;
   onOpenPreferences: () => void;
+  scrollContainerRef?: React.RefObject<HTMLElement | null>;
+  savedScrollTop?: number;
 }
 
 function formatRelativeTime(epochMs: number): string {
@@ -316,6 +318,7 @@ export function MarkdownPreview({
   zoomLevel, fillScreen,
   onZoomIn, onZoomOut, onZoomReset, onToggleFillScreen,
   activePalette, onChangePalette, onOpenPreferences,
+  scrollContainerRef, savedScrollTop,
 }: MarkdownPreviewProps) {
   const [showPalettePicker, setShowPalettePicker] = useState(false);
   const paletteBtnRef = useRef<HTMLButtonElement>(null);
@@ -420,6 +423,18 @@ export function MarkdownPreview({
     update();
     return () => scrollParent.removeEventListener('scroll', update);
   }, [html]);
+
+  // Restore scroll position after markdown renders
+  useEffect(() => {
+    if (savedScrollTop !== undefined && savedScrollTop > 0 && scrollContainerRef?.current) {
+      const container = scrollContainerRef.current;
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          container.scrollTop = savedScrollTop;
+        });
+      });
+    }
+  }, [fileContent?.path, savedScrollTop, scrollContainerRef]);
 
   // Add copy buttons to code blocks
   useEffect(() => {

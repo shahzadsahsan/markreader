@@ -1,5 +1,6 @@
 // MarkScout — Core Types (Rust port of src/lib/types.ts)
 
+use std::collections::HashMap;
 use serde::{Deserialize, Serialize};
 
 // --- Sidebar View ---
@@ -115,6 +116,8 @@ pub struct UiState {
     pub zoom_level: f64,
     pub fill_screen: bool,
     pub content_search: bool,
+    #[serde(default)]
+    pub scroll_positions: HashMap<String, f64>,
 }
 
 // --- App State (v2) ---
@@ -274,4 +277,6 @@ pub struct UiStateResponse {
     pub favorites: Vec<FavoriteEntry>,
     pub favorite_folders: Vec<String>,
     pub history: Vec<HistoryEntry>,
+    #[serde(default)]
+    pub scroll_positions: HashMap<String, f64>,
 }

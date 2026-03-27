@@ -6,6 +6,7 @@ use std::time::{SystemTime, UNIX_EPOCH};
 
 use tokio::sync::Mutex;
 
+use std::collections::HashMap;
 use crate::types::{
     AppState, FavoriteEntry, FilterConfig, FilterPresetId, HistoryEntry, PreferencesState,
     SidebarView, UiState,
@@ -61,6 +62,7 @@ fn default_state() -> AppState {
             zoom_level: 1.0,
             fill_screen: false,
             content_search: false,
+            scroll_positions: HashMap::new(),
         },
         excluded_folders: vec![],
         last_session_at: None,
@@ -298,6 +300,24 @@ impl AppStateManager {
     ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         let mut state = self.state.lock().await;
         state.ui.content_search = content_search;
+        self.save(&state).await
+    }
+
+    /// Save scroll positions (capped at 200 entries).
+    pub async fn save_scroll_positions(
+        &self,
+        positions: HashMap<String, f64>,
+    ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+        let mut state = self.state.lock().await;
+        state.ui.scroll_positions = positions;
+        // Cap at 200 most recent entries
+        if state.ui.scroll_positions.len() > 200 {
+            // Keep only the 200 entries — since HashMap has no order, just truncate
+            let keys: Vec<String> = state.ui.scroll_positions.keys().skip(200).cloned().collect();
+            for key in keys {
+                state.ui.scroll_positions.remove(&key);
+            }
+        }
         self.save(&state).await
     }
 
