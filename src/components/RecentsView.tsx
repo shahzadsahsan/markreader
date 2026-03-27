@@ -9,7 +9,6 @@ interface RecentsViewProps {
   onSelectFile: (path: string) => void;
   onToggleStar: (path: string) => void;
   favorites: Set<string>;
-  viewCounts?: Map<string, number>;
 }
 
 type TimeFilter = 'all' | '1h' | '3h' | '24h';
@@ -29,11 +28,9 @@ export function RecentsView({
   onSelectFile,
   onToggleStar,
   favorites,
-  viewCounts,
 }: RecentsViewProps) {
   const [timeFilter, setTimeFilter] = useState<TimeFilter>('all');
   const [groupByFolder, setGroupByFolder] = useState(() => localStorage.getItem('markscout-recents-grouped') === 'true');
-  const [sortByViews, setSortByViews] = useState(false);
   // Tracks which groups are fully expanded (show all files)
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
 
@@ -53,11 +50,8 @@ export function RecentsView({
       const cutoff = Date.now() - threshold;
       result = result.filter(f => f.modifiedAt >= cutoff);
     }
-    if (sortByViews && timeFilter === 'all' && viewCounts && viewCounts.size > 0) {
-      result = [...result].sort((a, b) => (viewCounts.get(b.path) ?? 0) - (viewCounts.get(a.path) ?? 0));
-    }
     return result;
-  }, [files, timeFilter, sortByViews, viewCounts]);
+  }, [files, timeFilter]);
 
   // Smart groups: project → files, sorted by most recent project first
   const groupedFiles = useMemo(() => {
@@ -94,30 +88,24 @@ export function RecentsView({
           </button>
         ))}
         <div style={{ flex: 1 }} />
-        {timeFilter === 'all' && (
-          <button
-            className={`filter-pill ${sortByViews ? 'active' : ''}`}
-            onClick={() => setSortByViews(p => !p)}
-            title="Sort by most viewed (only in All view)"
-            style={{ display: 'flex', alignItems: 'center', gap: 3 }}
-          >
-            <span>{sortByViews ? 'Views' : 'Recent'}</span>
-          </button>
-        )}
+        <button
+          className={`filter-pill ${!groupByFolder ? 'active' : ''}`}
+          onClick={() => {
+            setGroupByFolder(false);
+            localStorage.setItem('markscout-recents-grouped', 'false');
+          }}
+        >
+          Sort: Recent
+        </button>
         <button
           className={`filter-pill ${groupByFolder ? 'active' : ''}`}
           onClick={() => {
-            setGroupByFolder(prev => {
-              const next = !prev;
-              localStorage.setItem('markscout-recents-grouped', String(next));
-              if (next) setExpandedGroups(new Set());
-              return next;
-            });
+            setGroupByFolder(true);
+            localStorage.setItem('markscout-recents-grouped', 'true');
+            setExpandedGroups(new Set());
           }}
-          title="Group by project"
-          style={{ display: 'flex', alignItems: 'center', gap: 3 }}
         >
-          <span>{'\uD83D\uDCC2'}</span><span>Group</span>
+          Sort: Folder
         </button>
       </div>
 

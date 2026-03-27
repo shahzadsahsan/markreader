@@ -28,9 +28,6 @@ export default function AppShell() {
   const [favorites, setFavorites] = useState<Set<string>>(new Set());
   const [searchQuery, setSearchQuery] = useState('');
 
-  // View counts from history (for "Most Viewed" sort)
-  const [viewCounts, setViewCounts] = useState<Map<string, number>>(new Map());
-
   // Folder features
   const [favoriteFolders, setFavoriteFolders] = useState<Set<string>>(new Set());
   const [excludedPaths, setExcludedPaths] = useState<Set<string>>(new Set());
@@ -174,13 +171,6 @@ export default function AppShell() {
         if (data.contentSearch !== undefined) setContentSearch(data.contentSearch);
         if (data.scrollPositions) {
           scrollPositionsRef.current = new Map(Object.entries(data.scrollPositions));
-        }
-        if (data.history) {
-          const counts = new Map<string, number>();
-          for (const h of data.history) {
-            counts.set(h.path, h.viewCount ?? 1);
-          }
-          setViewCounts(counts);
         }
         if (data.favoriteFolders) {
           setFavoriteFolders(new Set(data.favoriteFolders));
@@ -367,12 +357,6 @@ export default function AppShell() {
       api.recordHistory(filePath, data.contentHash || '').catch(() => {});
       api.saveUiState({ lastSelectedPath: filePath }).catch(() => {});
 
-      // Update view counts for "Most Viewed" sort
-      setViewCounts(prev => {
-        const next = new Map(prev);
-        next.set(filePath, (next.get(filePath) ?? 0) + 1);
-        return next;
-      });
     } catch {
       // silent
     } finally {
@@ -1016,7 +1000,6 @@ export default function AppShell() {
             searchResults={searchResults}
             searchLoading={searchLoading}
             onOpenPreferences={() => setPrefsOpen(true)}
-            viewCounts={viewCounts}
           />
         </div>
 
