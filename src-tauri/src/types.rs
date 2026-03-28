@@ -165,25 +165,6 @@ pub struct ProjectGroup {
     pub files: Vec<FileEntry>,
 }
 
-#[derive(Debug, Clone, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct SmartCollection {
-    pub id: String,
-    pub label: String,
-    pub icon: String,
-    pub files: Vec<FileEntry>,
-    pub count: u32,
-}
-
-#[derive(Debug, Clone, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct FileLink {
-    pub target_path: String,
-    pub target_name: String,
-    pub link_text: String,
-    pub line_number: u32,
-}
-
 // --- Folder Node ---
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

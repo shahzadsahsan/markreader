@@ -163,18 +163,3 @@ export interface WhatsNewResponse {
   totalChanges: number;
 }
 
-// v0.6 — Smart Collections
-export interface SmartCollection {
-  id: string;
-  label: string;
-  icon: string;
-  files: FileEntry[];
-  count: number;
-}
-
-export interface FileLink {
-  targetPath: string;
-  targetName: string;
-  linkText: string;
-  lineNumber: number;
-}

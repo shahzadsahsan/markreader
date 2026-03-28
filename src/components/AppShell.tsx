@@ -696,6 +696,12 @@ export default function AppShell() {
         if (e.key === '-') { e.preventDefault(); zoomOut(); return; }
         if (e.key === '0') { e.preventDefault(); zoomReset(); return; }
         if (e.key === ',') { e.preventDefault(); setPrefsOpen(true); return; }
+        if (e.key === 'p' || e.key === 'P') {
+          e.preventDefault();
+          if (sidebarCollapsed) toggleCollapse();
+          setTimeout(() => searchInputRef.current?.focus(), 50);
+          return;
+        }
         if (e.key === 's' || e.key === 'S') { e.preventDefault(); toggleCollapse(); return; }
         if (e.shiftKey && (e.key === 'f' || e.key === 'F')) { e.preventDefault(); toggleFillScreen(); return; }
       }
@@ -745,7 +751,7 @@ export default function AppShell() {
 
     document.addEventListener('keydown', handleKey);
     return () => document.removeEventListener('keydown', handleKey);
-  }, [changeView, toggleStar, selectFile, selectedPath, filteredFiles, zoomIn, zoomOut, zoomReset, toggleFillScreen, toggleCollapse]);
+  }, [changeView, toggleStar, selectFile, selectedPath, filteredFiles, zoomIn, zoomOut, zoomReset, toggleFillScreen, toggleCollapse, sidebarCollapsed]);
 
   // --- Trigger native folder picker (Tauri dialog) ---
   const triggerAddFolder = useCallback(async () => {
@@ -1064,7 +1070,8 @@ export default function AppShell() {
             <h2 style={{ fontSize: 28, marginBottom: 24, color: 'var(--accent)' }}>Keyboard Shortcuts</h2>
             <div style={{ display: 'grid', gridTemplateColumns: 'auto 1fr', gap: '14px 24px', fontSize: 20 }}>
               {([
-                ['1 2 3', 'Switch sidebar view'],
+                ['Cmd + P', 'Quick open (search files)'],
+                ['1 / 2', 'Switch sidebar view'],
                 ['j / k', 'Navigate files (up / down)'],
                 ['s', 'Star / unstar file'],
                 ['/', 'Focus search'],

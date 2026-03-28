@@ -253,8 +253,6 @@ pub fn run() {
             commands::system::write_crash_log,
             commands::session::get_whats_new,
             commands::session::record_session_start,
-            commands::collections::get_collections,
-            commands::collections::get_file_links,
         ])
         .run(tauri::generate_context!())
         .expect("error while running MarkScout");

@@ -1,6 +1,5 @@
 // MarkScout — Tauri Command Modules
 
-pub mod collections;
 pub mod files;
 pub mod preferences;
 pub mod search;

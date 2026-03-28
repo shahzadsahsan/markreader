@@ -14,8 +14,6 @@ import type {
   PreferencesResponse,
   SidebarView,
   WhatsNewResponse,
-  SmartCollection,
-  FileLink,
 } from './types';
 
 // ---------------------------------------------------------------------------
@@ -153,10 +151,4 @@ export const api = {
   recordSessionStart: () =>
     invoke<{ previousSessionAt: number | null }>('record_session_start'),
 
-  // --- v0.6: Smart Collections ---
-  getCollections: () =>
-    invoke<SmartCollection[]>('get_collections'),
-
-  getFileLinks: (path: string) =>
-    invoke<FileLink[]>('get_file_links', { path }),
 };
