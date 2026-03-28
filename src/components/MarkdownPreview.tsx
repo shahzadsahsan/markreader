@@ -803,8 +803,8 @@ export function MarkdownPreview({
               width: 230,
               maxHeight: 420,
               overflowY: 'auto',
-              background: 'var(--surface, #161616)',
-              border: '1px solid var(--border, #2a2a2a)',
+              background: '#1a1a1a',
+              border: '1px solid #333',
               borderRadius: 8,
               padding: '4px 0',
               zIndex: 9999,
@@ -813,12 +813,12 @@ export function MarkdownPreview({
           >
             {groups.map(([category, palettes], gi) => (
               <div key={category}>
-                {gi > 0 && <div style={{ height: 1, background: 'var(--border)', margin: '4px 0' }} />}
+                {gi > 0 && <div style={{ height: 1, background: '#333', margin: '4px 0' }} />}
                 <div style={{
                   padding: '4px 12px 2px',
                   fontSize: 'var(--text-xs)',
                   fontFamily: 'var(--font-ui)',
-                  color: 'var(--text-muted)',
+                  color: '#888',
                   textTransform: 'uppercase',
                   letterSpacing: '0.05em',
                   fontWeight: 600,
