@@ -1,6 +1,6 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { open } from '@tauri-apps/plugin-dialog';
-import type { FilterPresetId } from '../lib/types';
+import type { FilterPresetId, SyncStatus } from '../lib/types';
 import { api } from '../lib/api';
 import { TYPOGRAPHY_PRESETS, getTypographyPreset, applyTypographyPreset, loadSavedTypography, saveTypography } from '../lib/typography';
 
@@ -28,6 +28,37 @@ export function PreferencesPanel({ open: isOpen, onClose, onPresetsChanged }: Pr
   const panelRef = useRef<HTMLDivElement>(null);
   const minFileLengthTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [activeTypography, setActiveTypography] = useState(() => loadSavedTypography());
+  const [syncStatus, setSyncStatus] = useState<SyncStatus | null>(null);
+  const [syncLoading, setSyncLoading] = useState(false);
+
+  const loadSyncStatus = useCallback(async () => {
+    try {
+      const status = await api.getSyncStatus();
+      setSyncStatus(status);
+    } catch { /* ignore */ }
+  }, []);
+
+  const handleToggleSync = async () => {
+    setSyncLoading(true);
+    try {
+      if (syncStatus?.enabled) {
+        await api.disableSync();
+      } else {
+        await api.enableSync();
+      }
+      await loadSyncStatus();
+    } catch { /* ignore */ }
+    setSyncLoading(false);
+  };
+
+  const handleSyncNow = async () => {
+    setSyncLoading(true);
+    try {
+      await api.triggerFullSync();
+      await loadSyncStatus();
+    } catch { /* ignore */ }
+    setSyncLoading(false);
+  };
 
   const handleTypographyChange = (id: string) => {
     setActiveTypography(id);
@@ -48,7 +79,8 @@ export function PreferencesPanel({ open: isOpen, onClose, onPresetsChanged }: Pr
         setLoading(false);
       })
       .catch(() => setLoading(false));
-  }, [isOpen]);
+    loadSyncStatus();
+  }, [isOpen, loadSyncStatus]);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -112,6 +144,17 @@ export function PreferencesPanel({ open: isOpen, onClose, onPresetsChanged }: Pr
       setWatchDirs(prev => [...prev, selected as string]);
       onPresetsChanged();
     }
+  };
+
+  const formatRelativeTime = (epochMs: number) => {
+    const diff = Date.now() - epochMs;
+    const mins = Math.floor(diff / 60000);
+    if (mins < 1) return 'just now';
+    if (mins < 60) return `${mins}m ago`;
+    const hours = Math.floor(mins / 60);
+    if (hours < 24) return `${hours}h ago`;
+    const days = Math.floor(hours / 24);
+    return `${days}d ago`;
   };
 
   if (!isOpen) return null;
@@ -180,6 +223,68 @@ export function PreferencesPanel({ open: isOpen, onClose, onPresetsChanged }: Pr
                     );
                   })}
                 </div>
+              </div>
+
+              {/* iCloud Sync */}
+              <div className="px-5 py-4 border-b" style={{ borderColor: 'var(--border)' }}>
+                <h3 className="text-xs font-medium uppercase tracking-wider mb-3" style={{ color: 'var(--text-muted)' }}>
+                  iCloud Sync
+                </h3>
+                {syncStatus && !syncStatus.available ? (
+                  <p className="text-[10px] px-3 py-2 rounded-lg" style={{ background: 'var(--hover-bg)', color: 'var(--text-muted)' }}>
+                    iCloud Drive is not enabled. Enable it in System Settings &gt; Apple ID &gt; iCloud &gt; iCloud Drive to sync files to your iOS device.
+                  </p>
+                ) : (
+                  <>
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={handleToggleSync}
+                          disabled={syncLoading}
+                          className="relative w-9 h-5 rounded-full transition-colors"
+                          style={{
+                            background: syncStatus?.enabled ? 'var(--accent)' : 'var(--border)',
+                            opacity: syncLoading ? 0.5 : 1,
+                            cursor: syncLoading ? 'wait' : 'pointer',
+                          }}
+                        >
+                          <span
+                            className="absolute top-0.5 w-4 h-4 rounded-full transition-transform"
+                            style={{
+                              background: '#fff',
+                              left: syncStatus?.enabled ? '18px' : '2px',
+                            }}
+                          />
+                        </button>
+                        <span className="text-xs" style={{ fontFamily: 'var(--font-ui)', color: 'var(--text)' }}>
+                          Sync to iCloud Drive
+                        </span>
+                      </div>
+                      {syncStatus?.enabled && (
+                        <button
+                          onClick={handleSyncNow}
+                          disabled={syncLoading}
+                          className="text-[10px] px-2 py-0.5 rounded transition-colors"
+                          style={{ color: 'var(--accent)', background: 'var(--hover-bg)', border: '1px solid var(--border)', cursor: syncLoading ? 'wait' : 'pointer' }}
+                        >
+                          Sync Now
+                        </button>
+                      )}
+                    </div>
+                    <p className="text-[10px] mb-2" style={{ color: 'var(--text-muted)' }}>
+                      Mirrors your markdown files to iCloud Drive for the MarkScout iOS companion app.
+                    </p>
+                    {syncStatus?.enabled && syncStatus.lastSyncedAt && (
+                      <div className="text-[10px] px-3 py-1.5 rounded-lg" style={{ background: 'var(--hover-bg)', color: 'var(--text-muted)' }}>
+                        {syncStatus.fileCount} files &middot;{' '}
+                        {syncStatus.totalSize < 1024 * 1024
+                          ? `${(syncStatus.totalSize / 1024).toFixed(0)} KB`
+                          : `${(syncStatus.totalSize / 1024 / 1024).toFixed(1)} MB`}
+                        {' '}&middot; Last synced {formatRelativeTime(syncStatus.lastSyncedAt)}
+                      </div>
+                    )}
+                  </>
+                )}
               </div>
 
               {/* Noise filters — redesigned */}

@@ -104,6 +104,10 @@ pub struct PreferencesState {
     pub watch_dirs: Vec<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub min_file_length: Option<u64>,
+    #[serde(default)]
+    pub sync_enabled: Option<bool>,
+    #[serde(default)]
+    pub sync_size_threshold: Option<u64>,
 }
 
 // --- UI State ---

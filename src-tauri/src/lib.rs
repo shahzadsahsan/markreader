@@ -2,6 +2,7 @@ mod commands;
 mod filters;
 mod hash;
 mod state;
+mod sync;
 mod types;
 mod watcher;
 
@@ -12,6 +13,7 @@ use tauri::menu::{MenuBuilder, MenuItemBuilder, PredefinedMenuItem, SubmenuBuild
 use tauri::{Emitter, Manager};
 
 use state::AppStateManager;
+use sync::SyncManager;
 use watcher::FileWatcher;
 
 // --- Window state persistence ---
@@ -162,6 +164,10 @@ pub fn run() {
             let watcher = FileWatcher::new(app.handle().clone())?;
             app.manage(watcher);
 
+            // Initialize sync manager
+            let sync_manager = SyncManager::new();
+            app.manage(sync_manager);
+
             // Build and set the application menu
             let menu = build_menu(app)?;
             app.set_menu(menu)?;
@@ -253,6 +259,11 @@ pub fn run() {
             commands::system::write_crash_log,
             commands::session::get_whats_new,
             commands::session::record_session_start,
+            commands::sync_cmds::get_sync_status,
+            commands::sync_cmds::enable_sync,
+            commands::sync_cmds::disable_sync,
+            commands::sync_cmds::trigger_full_sync,
+            commands::sync_cmds::set_sync_size_threshold,
         ])
         .run(tauri::generate_context!())
         .expect("error while running MarkScout");

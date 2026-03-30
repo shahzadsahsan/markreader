@@ -13,6 +13,7 @@ import type {
   FilterPresetId,
   PreferencesResponse,
   SidebarView,
+  SyncStatus,
   WhatsNewResponse,
 } from './types';
 
@@ -143,6 +144,22 @@ export const api = {
 
   writeCrashLog: (entry: string) =>
     invoke<void>('write_crash_log', { entry }),
+
+  // --- Sync ---
+  getSyncStatus: () =>
+    invoke<SyncStatus>('get_sync_status'),
+
+  enableSync: () =>
+    invoke<SyncStatus>('enable_sync'),
+
+  disableSync: () =>
+    invoke<void>('disable_sync'),
+
+  triggerFullSync: () =>
+    invoke<SyncStatus>('trigger_full_sync'),
+
+  setSyncSizeThreshold: (bytes: number) =>
+    invoke<void>('set_sync_size_threshold', { bytes }),
 
   // --- v0.5: Session Intelligence ---
   getWhatsNew: () =>

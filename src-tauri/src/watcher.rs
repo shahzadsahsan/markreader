@@ -507,6 +507,8 @@ fn read_state_sync() -> crate::types::AppState {
             active_presets: vec![],
             watch_dirs: vec![],
             min_file_length: Some(0),
+            sync_enabled: Some(false),
+            sync_size_threshold: Some(512_000),
         },
         ui: crate::types::UiState {
             sidebar_view: crate::types::SidebarView::Recents,
@@ -681,6 +683,20 @@ fn periodic_rescan(
             removed,
             registry.len()
         );
+
+        // Trigger sync after rescan changes
+        let app = app_handle.clone();
+        std::thread::spawn(move || {
+            run_async(async {
+                let state_mgr: tauri::State<'_, AppStateManager> = app.state();
+                if !state_mgr.is_sync_enabled().await {
+                    return;
+                }
+                let sync_mgr: tauri::State<'_, crate::sync::SyncManager> = app.state();
+                let watcher: tauri::State<'_, FileWatcher> = app.state();
+                let _ = sync_mgr.full_sync(&watcher, &state_mgr).await;
+            });
+        });
     }
 }
 
@@ -744,6 +760,7 @@ fn handle_debounced_events(
     app_handle: &AppHandle,
 ) {
     let ctx = load_filter_context_sync(app_handle);
+    let mut sync_events: Vec<(String, String)> = Vec::new();
 
     for event in events {
         use notify::EventKind;
@@ -781,6 +798,7 @@ fn handle_debounced_events(
                         // If file was previously tracked but now excluded, remove it
                         if registry.contains_key(&path_str) {
                             registry.remove(&path_str);
+                            sync_events.push(("file-removed".into(), path_str.clone()));
                             let _ = app_handle.emit(
                                 "file-event",
                                 serde_json::json!({
@@ -800,6 +818,7 @@ fn handle_debounced_events(
                         let event_type = if is_new { "file-added" } else { "file-changed" };
 
                         registry.insert(path_str.clone(), entry.clone());
+                        sync_events.push((event_type.into(), path_str.clone()));
 
                         // Live move tracking for new files
                         if is_new {
@@ -829,6 +848,7 @@ fn handle_debounced_events(
                 EventKind::Remove(_) => {
                     if registry.contains_key(&path_str) {
                         registry.remove(&path_str);
+                        sync_events.push(("file-removed".into(), path_str.clone()));
                         let _ = app_handle.emit(
                             "file-event",
                             serde_json::json!({
@@ -842,6 +862,24 @@ fn handle_debounced_events(
                 _ => {}
             }
         }
+    }
+
+    // Incremental iCloud sync for changed files
+    if !sync_events.is_empty() {
+        let app = app_handle.clone();
+        std::thread::spawn(move || {
+            run_async(async {
+                let state_mgr: tauri::State<'_, AppStateManager> = app.state();
+                if !state_mgr.is_sync_enabled().await {
+                    return;
+                }
+                let sync_mgr: tauri::State<'_, crate::sync::SyncManager> = app.state();
+                let watcher: tauri::State<'_, FileWatcher> = app.state();
+                for (evt_type, path) in &sync_events {
+                    let _ = sync_mgr.incremental_sync(evt_type, path, &watcher, &state_mgr).await;
+                }
+            });
+        });
     }
 }
 

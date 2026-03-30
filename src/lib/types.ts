@@ -101,6 +101,17 @@ export interface AppState {
   };
 }
 
+// Sync status
+export interface SyncStatus {
+  enabled: boolean;
+  available: boolean;
+  lastSyncedAt: number | null;
+  fileCount: number;
+  totalSize: number;
+  icloudPath: string;
+  error: string | null;
+}
+
 // Tauri event types (emitted via app_handle.emit("file-event", ...))
 export interface TauriFileEvent {
   type: 'file-added' | 'file-changed';

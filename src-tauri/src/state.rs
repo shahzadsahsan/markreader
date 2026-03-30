@@ -51,6 +51,8 @@ fn default_state() -> AppState {
             active_presets: vec![],
             watch_dirs: vec![],
             min_file_length: Some(0),
+            sync_enabled: Some(false),
+            sync_size_threshold: Some(512_000),
         },
         ui: UiState {
             sidebar_view: SidebarView::Recents,
@@ -472,6 +474,36 @@ impl AppStateManager {
     ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         let mut state = self.state.lock().await;
         state.preferences.min_file_length = Some(bytes);
+        self.save(&state).await
+    }
+
+    // --- Sync Preferences ---
+
+    pub async fn is_sync_enabled(&self) -> bool {
+        let state = self.state.lock().await;
+        state.preferences.sync_enabled.unwrap_or(false)
+    }
+
+    pub async fn set_sync_enabled(
+        &self,
+        enabled: bool,
+    ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+        let mut state = self.state.lock().await;
+        state.preferences.sync_enabled = Some(enabled);
+        self.save(&state).await
+    }
+
+    pub async fn get_sync_size_threshold(&self) -> u64 {
+        let state = self.state.lock().await;
+        state.preferences.sync_size_threshold.unwrap_or(512_000)
+    }
+
+    pub async fn set_sync_size_threshold(
+        &self,
+        bytes: u64,
+    ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+        let mut state = self.state.lock().await;
+        state.preferences.sync_size_threshold = Some(bytes);
         self.save(&state).await
     }
 
