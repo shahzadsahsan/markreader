@@ -1,4 +1,5 @@
 import SwiftUI
+import SafariServices
 import WebKit
 
 struct FileDetailView: View {
@@ -11,12 +12,11 @@ struct FileDetailView: View {
     @State private var isLoading = true
     @State private var showPalettePicker = false
     @State private var showTOC = false
-    @State private var showSearch = false
-    @State private var searchText = ""
     @State private var headings: [HeadingItem] = []
     @State private var activeHeadingId: String?
     @State private var showResumeToast = false
     @State private var scrollPercentage: Double = 0
+    @State private var safariURL: URL?
 
     // Handoff
     @State private var userActivity: NSUserActivity?
@@ -24,11 +24,6 @@ struct FileDetailView: View {
     var body: some View {
         ZStack(alignment: .trailing) {
             VStack(spacing: 0) {
-                // Search bar overlay
-                if showSearch {
-                    searchBar
-                }
-
                 // File header
                 fileHeader
 
@@ -52,7 +47,9 @@ struct FileDetailView: View {
                             activeHeadingId = id
                         },
                         onLinkTapped: { url in
-                            UIApplication.shared.open(url)
+                            if url.scheme == "http" || url.scheme == "https" {
+                                safariURL = url
+                            }
                         },
                         restoreScrollPercentage: appState.readingPosition(for: file.relativePath, contentHash: file.contentHash)
                     )
@@ -72,8 +69,10 @@ struct FileDetailView: View {
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItemGroup(placement: .topBarTrailing) {
-                // Search
-                Button { showSearch.toggle() } label: {
+                // Find in page (triggers native WKWebView find bar)
+                Button {
+                    NotificationCenter.default.post(name: .triggerFindInPage, object: nil)
+                } label: {
                     Image(systemName: "magnifyingglass")
                         .foregroundStyle(Color.msMuted)
                 }
@@ -124,6 +123,10 @@ struct FileDetailView: View {
                 NotificationCenter.default.post(name: .scrollToHeading, object: headingId)
             }
             .presentationDetents([.medium, .large])
+        }
+        .sheet(item: $safariURL) { url in
+            SafariView(url: url)
+                .ignoresSafeArea()
         }
         .overlay {
             if showResumeToast {
@@ -219,28 +222,6 @@ struct FileDetailView: View {
         .background(Color.msSurface)
     }
 
-    // MARK: - Search Bar
-
-    private var searchBar: some View {
-        HStack(spacing: 8) {
-            Image(systemName: "magnifyingglass")
-                .foregroundStyle(Color.msMuted)
-            TextField("Find in document", text: $searchText)
-                .textFieldStyle(.plain)
-                .foregroundStyle(Color.msText)
-                .onSubmit {
-                    performSearch()
-                }
-            Button { showSearch = false; searchText = "" } label: {
-                Image(systemName: "xmark.circle.fill")
-                    .foregroundStyle(Color.msMuted)
-            }
-        }
-        .padding(.horizontal, 12)
-        .padding(.vertical, 8)
-        .background(Color.msSurface.opacity(0.95))
-    }
-
     // MARK: - Content Loading
 
     private func loadContent() async {
@@ -268,10 +249,6 @@ struct FileDetailView: View {
         content?.split(whereSeparator: { $0.isWhitespace || $0.isNewline }).count
     }
 
-    private func performSearch() {
-        // WKWebView find-in-page would require a reference to the webview
-    }
-
     // MARK: - Handoff
 
     private func setupHandoff() {
@@ -287,6 +264,7 @@ struct FileDetailView: View {
 
 extension Notification.Name {
     static let scrollToHeading = Notification.Name("scrollToHeading")
+    static let triggerFindInPage = Notification.Name("triggerFindInPage")
 }
 
 // MARK: - Palette Picker Sheet
@@ -380,4 +358,23 @@ struct TOCSheet: View {
             .navigationBarTitleDisplayMode(.inline)
         }
     }
+}
+
+// MARK: - Safari View
+
+extension URL: @retroactive Identifiable {
+    public var id: String { absoluteString }
+}
+
+struct SafariView: UIViewControllerRepresentable {
+    let url: URL
+
+    func makeUIViewController(context: Context) -> SFSafariViewController {
+        let vc = SFSafariViewController(url: url)
+        vc.preferredBarTintColor = UIColor(red: 0.05, green: 0.05, blue: 0.05, alpha: 1)
+        vc.preferredControlTintColor = UIColor(red: 0.83, green: 0.63, blue: 0.29, alpha: 1) // amber
+        return vc
+    }
+
+    func updateUIViewController(_ vc: SFSafariViewController, context: Context) {}
 }

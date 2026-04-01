@@ -64,10 +64,25 @@ struct FileListView: View {
             Text("No files synced yet")
                 .font(.system(.headline, design: .monospaced))
                 .foregroundStyle(Color.msText)
-            Text("Make sure sync is enabled on your Mac in MarkScout Preferences.")
+            Text("Choose your iCloud sync folder to get started.")
                 .foregroundStyle(Color.msMuted)
                 .multilineTextAlignment(.center)
                 .font(.callout)
+                .padding(.horizontal, 32)
+            Button {
+                appState.resetSync()
+            } label: {
+                Text("Choose Sync Folder")
+                    .font(.system(.body, design: .monospaced))
+                    .fontWeight(.semibold)
+                    .foregroundStyle(.black)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 14)
+                    .background(Color.amber)
+                    .clipShape(RoundedRectangle(cornerRadius: 12))
+            }
+            .padding(.horizontal, 32)
+            .padding(.top, 8)
         }
         .frame(maxWidth: .infinity)
         .padding(.top, 80)

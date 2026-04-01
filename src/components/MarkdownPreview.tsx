@@ -531,6 +531,13 @@ export function MarkdownPreview({
       if (href && href.endsWith('.md')) {
         e.preventDefault();
         resolveAndNavigate(href);
+      } else if (href && (href.startsWith('http://') || href.startsWith('https://'))) {
+        e.preventDefault();
+        api.openExternal(href);
+      } else if (href && href.startsWith('#')) {
+        // Allow anchor links to work normally
+      } else if (href) {
+        e.preventDefault(); // Block other navigation to prevent leaving the app
       }
       return;
     }

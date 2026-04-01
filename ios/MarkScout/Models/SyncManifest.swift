@@ -7,14 +7,6 @@ struct SyncManifest: Codable {
     let totalSize: UInt64
     let files: [FileEntry]
     let favorites: [FavoriteEntry]
-
-    enum CodingKeys: String, CodingKey {
-        case version
-        case syncedAt = "synced_at"
-        case fileCount = "file_count"
-        case totalSize = "total_size"
-        case files, favorites
-    }
 }
 
 struct FileEntry: Codable, Identifiable, Hashable {
@@ -26,14 +18,6 @@ struct FileEntry: Codable, Identifiable, Hashable {
     let contentHash: String
 
     var id: String { relativePath }
-
-    enum CodingKeys: String, CodingKey {
-        case relativePath = "relative_path"
-        case name, project
-        case modifiedAt = "modified_at"
-        case size
-        case contentHash = "content_hash"
-    }
 
     var modifiedDate: Date {
         Date(timeIntervalSince1970: Double(modifiedAt) / 1000.0)
@@ -52,10 +36,4 @@ struct FavoriteEntry: Codable {
     let relativePath: String
     let contentHash: String
     let starredAt: UInt64
-
-    enum CodingKeys: String, CodingKey {
-        case relativePath = "relative_path"
-        case contentHash = "content_hash"
-        case starredAt = "starred_at"
-    }
 }

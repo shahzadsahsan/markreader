@@ -7,11 +7,10 @@ struct OnboardingView: View {
     @State private var errorMessage = ""
     @State private var isDownloading = false
     @State private var downloadProgress: (current: Int, total: Int) = (0, 0)
+    @State private var showingFolderPicker = false
 
     let folderManager: SyncFolderManager
     let onComplete: (SyncManifest) -> Void
-
-    @State private var pickerCoordinator: SimpleFolderPickerCoordinator?
 
     var body: some View {
         VStack(spacing: 0) {
@@ -26,6 +25,21 @@ struct OnboardingView: View {
             }
         }
         .background(Color.msBackground)
+        .fileImporter(isPresented: $showingFolderPicker, allowedContentTypes: [.folder]) { result in
+            switch result {
+            case .success(let url):
+                do {
+                    try folderManager.saveBookmark(for: url)
+                    startSyncing()
+                } catch {
+                    errorMessage = "Failed to save folder: \(error.localizedDescription)"
+                    showError = true
+                }
+            case .failure(let error):
+                errorMessage = "Picker error: \(error.localizedDescription)"
+                showError = true
+            }
+        }
     }
 
     // MARK: - Step 1: Welcome
@@ -77,21 +91,20 @@ struct OnboardingView: View {
 
             Spacer()
             amberButton("Choose Folder") {
-                presentFolderPicker()
+                showError = false
+                showingFolderPicker = true
             }
 
-            #if targetEnvironment(simulator)
             Button {
                 loadDemoData()
             } label: {
-                Text("Use Demo Data")
+                Text("Try Demo Mode")
                     .font(.system(.callout, design: .monospaced))
                     .foregroundStyle(Color.msMuted)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 12)
             }
             .padding(.horizontal, 32)
-            #endif
 
             Spacer().frame(height: 48)
         }
@@ -150,28 +163,6 @@ struct OnboardingView: View {
         } catch {
             errorMessage = "Demo error: \(error)"
             showError = true
-        }
-    }
-
-    private func presentFolderPicker() {
-        showError = false
-        let picker = UIDocumentPickerViewController(forOpeningContentTypes: [.folder])
-        picker.allowsMultipleSelection = false
-
-        let coordinator = SimpleFolderPickerCoordinator(folderManager: folderManager) { url in
-            if let url {
-                // Folder picked — immediately show downloading UI, then fetch manifest
-                startSyncing()
-            } else {
-                // User cancelled — do nothing
-            }
-        }
-        picker.delegate = coordinator
-        self.pickerCoordinator = coordinator
-
-        if let scene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
-           let root = scene.windows.first?.rootViewController {
-            root.present(picker, animated: true)
         }
     }
 

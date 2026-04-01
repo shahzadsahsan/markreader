@@ -1,6 +1,6 @@
 import Foundation
 import CoreSpotlight
-import MobileCoreServices
+import UniformTypeIdentifiers
 
 class LocalCacheManager {
     private let cacheDir: URL

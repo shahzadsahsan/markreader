@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>MarkScout — App Store Screenshot Generator</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Source+Serif+4:wght@400;600;700&display=swap');
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background: #1a1a1a;
+      color: #e0e0e0;
+      font-family: 'JetBrains Mono', monospace;
+      padding: 40px;
+    }
+
+    h1 {
+      text-align: center;
+      color: #d4a04a;
+      font-size: 24px;
+      margin-bottom: 12px;
+    }
+
+    .instructions {
+      text-align: center;
+      color: #888;
+      font-size: 13px;
+      margin-bottom: 40px;
+      line-height: 1.6;
+    }
+
+    .controls {
+      display: flex;
+      gap: 16px;
+      justify-content: center;
+      margin-bottom: 40px;
+      flex-wrap: wrap;
+    }
+
+    .controls button {
+      background: #2a2a2a;
+      border: 1px solid #3a3a3a;
+      color: #e0e0e0;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 13px;
+      padding: 10px 20px;
+      cursor: pointer;
+      border-radius: 6px;
+      transition: all 0.2s;
+    }
+
+    .controls button:hover {
+      background: #333;
+      border-color: #d4a04a;
+    }
+
+    .controls button.active {
+      background: #d4a04a;
+      color: #0d0d0d;
+      border-color: #d4a04a;
+    }
+
+    .file-input-wrap {
+      text-align: center;
+      margin-bottom: 32px;
+    }
+
+    .file-input-wrap label {
+      display: inline-block;
+      background: #d4a04a;
+      color: #0d0d0d;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 14px;
+      font-weight: 600;
+      padding: 12px 28px;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: opacity 0.2s;
+    }
+
+    .file-input-wrap label:hover { opacity: 0.85; }
+    .file-input-wrap input { display: none; }
+
+    /* --- Frame Canvas (2880x1800 at 50% display) --- */
+    .frame-container {
+      width: 1440px;
+      margin: 0 auto 60px;
+    }
+
+    .frame {
+      width: 2880px;
+      height: 1800px;
+      transform: scale(0.5);
+      transform-origin: top left;
+      position: relative;
+      overflow: hidden;
+      border-radius: 16px;
+    }
+
+    /* Background gradient — varies per slide */
+    .frame.slide-1 { background: linear-gradient(145deg, #0d0d0d 0%, #1a1207 50%, #0d0d0d 100%); }
+    .frame.slide-2 { background: linear-gradient(145deg, #0d0d0d 0%, #0d1a14 50%, #0d0d0d 100%); }
+    .frame.slide-3 { background: linear-gradient(145deg, #0d0d0d 0%, #1a0d1a 50%, #0d0d0d 100%); }
+    .frame.slide-4 { background: linear-gradient(145deg, #0d0d0d 0%, #0d1320 50%, #0d0d0d 100%); }
+    .frame.slide-5 { background: linear-gradient(145deg, #0d0d0d 0%, #1a1207 50%, #0d0d0d 100%); }
+
+    /* Text overlay */
+    .frame-text {
+      position: absolute;
+      top: 80px;
+      left: 0;
+      right: 0;
+      text-align: center;
+      z-index: 10;
+    }
+
+    .frame-headline {
+      font-family: 'Source Serif 4', Georgia, serif;
+      font-size: 80px;
+      font-weight: 700;
+      color: #ffffff;
+      letter-spacing: -1px;
+      margin-bottom: 20px;
+      text-shadow: 0 2px 40px rgba(0,0,0,0.5);
+    }
+
+    .frame-subheadline {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 34px;
+      font-weight: 400;
+      color: #d4a04a;
+      letter-spacing: 0.5px;
+    }
+
+    /* Screenshot image inside frame */
+    .frame-screenshot {
+      position: absolute;
+      bottom: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 2400px;
+      border-radius: 12px 12px 0 0;
+      box-shadow: 0 -8px 60px rgba(0,0,0,0.6);
+      overflow: hidden;
+    }
+
+    .frame-screenshot img {
+      width: 100%;
+      display: block;
+    }
+
+    .frame-screenshot .placeholder {
+      width: 100%;
+      height: 1300px;
+      background: #161616;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #555;
+      font-size: 32px;
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    /* macOS window chrome */
+    .window-chrome {
+      background: #1e1e1e;
+      height: 56px;
+      display: flex;
+      align-items: center;
+      padding: 0 24px;
+      border-bottom: 1px solid #2a2a2a;
+    }
+
+    .traffic-lights {
+      display: flex;
+      gap: 12px;
+    }
+
+    .traffic-light {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+    }
+
+    .traffic-light.red { background: #ff5f57; }
+    .traffic-light.yellow { background: #febc2e; }
+    .traffic-light.green { background: #28c840; }
+
+    .window-title {
+      flex: 1;
+      text-align: center;
+      color: #888;
+      font-size: 22px;
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    /* Export button */
+    .export-btn {
+      display: block;
+      margin: 20px auto;
+      background: #d4a04a;
+      color: #0d0d0d;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 14px;
+      font-weight: 600;
+      padding: 12px 32px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+
+    .export-btn:hover { opacity: 0.85; }
+
+    .slide-nav {
+      display: flex;
+      gap: 8px;
+      justify-content: center;
+      margin-bottom: 20px;
+    }
+
+    .slide-nav button {
+      background: #2a2a2a;
+      border: 1px solid #3a3a3a;
+      color: #888;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      padding: 6px 14px;
+      cursor: pointer;
+      border-radius: 4px;
+    }
+
+    .slide-nav button.active {
+      background: #d4a04a;
+      color: #0d0d0d;
+      border-color: #d4a04a;
+    }
+
+    canvas { display: none; }
+  </style>
+</head>
+<body>
+
+  <h1>MarkScout App Store Screenshot Generator</h1>
+  <p class="instructions">
+    Upload a raw screenshot for each slide, then export as 2880x1800 PNG.<br>
+    Screenshots should be taken at native resolution (ideally 2880x1800 or 2560x1600).
+  </p>
+
+  <div class="slide-nav" id="slideNav"></div>
+
+  <div class="file-input-wrap">
+    <label>
+      Upload Screenshot for Current Slide
+      <input type="file" id="screenshotInput" accept="image/*">
+    </label>
+  </div>
+
+  <div class="frame-container" id="frameContainer"></div>
+
+  <button class="export-btn" onclick="exportCurrentSlide()">Export Current Slide as PNG (2880x1800)</button>
+  <button class="export-btn" style="background:#2a2a2a;color:#d4a04a;margin-top:8px" onclick="exportAllSlides()">Export All Slides</button>
+
+  <canvas id="exportCanvas" width="2880" height="1800"></canvas>
+
+<script>
+const SLIDES = [
+  {
+    id: 1,
+    headline: "Your Markdown, Beautiful",
+    subheadline: "16 palettes. 5 typography presets. Zero distractions.",
+    className: "slide-1",
+    filename: "01-file-browser.png"
+  },
+  {
+    id: 2,
+    headline: "Read, Don't Edit",
+    subheadline: "Syntax highlighting, tables, task lists \u2014 all rendered perfectly.",
+    className: "slide-2",
+    filename: "02-reader-view.png"
+  },
+  {
+    id: 3,
+    headline: "Every Theme You Want",
+    subheadline: "Obsidian, Synthwave, Dracula, Nord, and 12 more.",
+    className: "slide-3",
+    filename: "03-themes.png"
+  },
+  {
+    id: 4,
+    headline: "Find Anything Instantly",
+    subheadline: "Full-text search across all your files with highlighted results.",
+    className: "slide-4",
+    filename: "04-search.png"
+  },
+  {
+    id: 5,
+    headline: "Built for AI Developers",
+    subheadline: "Watches your folders. Filters the noise. Shows what matters.",
+    className: "slide-5",
+    filename: "05-palettes.png"
+  }
+];
+
+let currentSlide = 0;
+const screenshots = {};
+
+function renderSlideNav() {
+  const nav = document.getElementById('slideNav');
+  nav.innerHTML = SLIDES.map((s, i) =>
+    `<button class="${i === currentSlide ? 'active' : ''}" onclick="switchSlide(${i})">${s.id}. ${s.headline.split(',')[0]}</button>`
+  ).join('');
+}
+
+function switchSlide(idx) {
+  currentSlide = idx;
+  renderSlideNav();
+  renderFrame();
+}
+
+function renderFrame() {
+  const slide = SLIDES[currentSlide];
+  const container = document.getElementById('frameContainer');
+  const hasImg = screenshots[slide.id];
+
+  container.innerHTML = `
+    <div class="frame ${slide.className}" id="currentFrame">
+      <div class="frame-text">
+        <div class="frame-headline">${slide.headline}</div>
+        <div class="frame-subheadline">${slide.subheadline}</div>
+      </div>
+      <div class="frame-screenshot">
+        <div class="window-chrome">
+          <div class="traffic-lights">
+            <div class="traffic-light red"></div>
+            <div class="traffic-light yellow"></div>
+            <div class="traffic-light green"></div>
+          </div>
+          <div class="window-title">MarkScout</div>
+          <div style="width:72px"></div>
+        </div>
+        ${hasImg
+          ? `<img src="${hasImg}" alt="Screenshot">`
+          : `<div class="placeholder">Drop or upload a screenshot</div>`
+        }
+      </div>
+    </div>
+  `;
+}
+
+document.getElementById('screenshotInput').addEventListener('change', function(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(ev) {
+    screenshots[SLIDES[currentSlide].id] = ev.target.result;
+    renderFrame();
+  };
+  reader.readAsDataURL(file);
+  e.target.value = '';
+});
+
+async function exportCurrentSlide() {
+  const slide = SLIDES[currentSlide];
+  const canvas = document.getElementById('exportCanvas');
+  const ctx = canvas.getContext('2d');
+
+  // Draw background gradient
+  const bgGradients = {
+    'slide-1': ['#0d0d0d', '#1a1207', '#0d0d0d'],
+    'slide-2': ['#0d0d0d', '#0d1a14', '#0d0d0d'],
+    'slide-3': ['#0d0d0d', '#1a0d1a', '#0d0d0d'],
+    'slide-4': ['#0d0d0d', '#0d1320', '#0d0d0d'],
+    'slide-5': ['#0d0d0d', '#1a1207', '#0d0d0d'],
+  };
+  const colors = bgGradients[slide.className];
+  const grad = ctx.createLinearGradient(0, 0, 2880, 1800);
+  grad.addColorStop(0, colors[0]);
+  grad.addColorStop(0.5, colors[1]);
+  grad.addColorStop(1, colors[2]);
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, 2880, 1800);
+
+  // Draw headline
+  ctx.textAlign = 'center';
+  ctx.fillStyle = '#ffffff';
+  ctx.font = '700 80px "Source Serif 4", Georgia, serif';
+  ctx.shadowColor = 'rgba(0,0,0,0.5)';
+  ctx.shadowBlur = 40;
+  ctx.fillText(slide.headline, 1440, 180);
+  ctx.shadowBlur = 0;
+
+  // Draw subheadline
+  ctx.fillStyle = '#d4a04a';
+  ctx.font = '400 34px "JetBrains Mono", monospace';
+  ctx.fillText(slide.subheadline, 1440, 240);
+
+  // Draw screenshot if available
+  if (screenshots[slide.id]) {
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    await new Promise((resolve) => {
+      img.onload = resolve;
+      img.src = screenshots[slide.id];
+    });
+
+    const screenshotWidth = 2400;
+    const screenshotX = (2880 - screenshotWidth) / 2;
+    const chromeHeight = 56;
+    const screenshotY = 340;
+    const availableHeight = 1800 - screenshotY;
+
+    // Window chrome
+    ctx.fillStyle = '#1e1e1e';
+    ctx.beginPath();
+    ctx.roundRect(screenshotX, screenshotY, screenshotWidth, chromeHeight, [12, 12, 0, 0]);
+    ctx.fill();
+
+    // Border bottom of chrome
+    ctx.fillStyle = '#2a2a2a';
+    ctx.fillRect(screenshotX, screenshotY + chromeHeight - 1, screenshotWidth, 1);
+
+    // Traffic lights
+    const lightY = screenshotY + 16;
+    const lightColors = ['#ff5f57', '#febc2e', '#28c840'];
+    lightColors.forEach((color, i) => {
+      ctx.fillStyle = color;
+      ctx.beginPath();
+      ctx.arc(screenshotX + 24 + i * 36, lightY + 12, 12, 0, Math.PI * 2);
+      ctx.fill();
+    });
+
+    // Window title
+    ctx.fillStyle = '#888';
+    ctx.font = '400 22px "JetBrains Mono", monospace';
+    ctx.fillText('MarkScout', screenshotX + screenshotWidth / 2, screenshotY + 36);
+
+    // Screenshot image
+    const imgAspect = img.width / img.height;
+    const drawHeight = availableHeight - chromeHeight;
+    const drawWidth = screenshotWidth;
+
+    // Shadow behind screenshot
+    ctx.shadowColor = 'rgba(0,0,0,0.6)';
+    ctx.shadowBlur = 60;
+    ctx.shadowOffsetY = -8;
+    ctx.fillStyle = '#161616';
+    ctx.fillRect(screenshotX, screenshotY + chromeHeight, screenshotWidth, drawHeight);
+    ctx.shadowBlur = 0;
+    ctx.shadowOffsetY = 0;
+
+    ctx.drawImage(img, screenshotX, screenshotY + chromeHeight, drawWidth, drawHeight);
+  } else {
+    // Placeholder
+    const screenshotX = 240;
+    ctx.fillStyle = '#161616';
+    ctx.beginPath();
+    ctx.roundRect(screenshotX, 340, 2400, 1460, [12, 12, 0, 0]);
+    ctx.fill();
+    ctx.fillStyle = '#555';
+    ctx.font = '400 32px "JetBrains Mono", monospace';
+    ctx.fillText('No screenshot loaded', 1440, 1070);
+  }
+
+  // Download
+  const link = document.createElement('a');
+  link.download = slide.filename;
+  link.href = canvas.toDataURL('image/png');
+  link.click();
+}
+
+async function exportAllSlides() {
+  for (let i = 0; i < SLIDES.length; i++) {
+    currentSlide = i;
+    renderSlideNav();
+    renderFrame();
+    await new Promise(r => setTimeout(r, 100));
+    await exportCurrentSlide();
+    await new Promise(r => setTimeout(r, 300));
+  }
+}
+
+// Initialize
+renderSlideNav();
+renderFrame();
+</script>
+</body>
+</html>

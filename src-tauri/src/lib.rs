@@ -40,10 +40,20 @@ impl Default for WindowState {
 }
 
 fn window_state_path() -> PathBuf {
-    dirs::home_dir()
-        .unwrap_or_default()
-        .join(".markscout")
-        .join("window-state.json")
+    #[cfg(feature = "mas")]
+    {
+        dirs::data_local_dir()
+            .unwrap_or_default()
+            .join("com.markscout.app")
+            .join("window-state.json")
+    }
+    #[cfg(not(feature = "mas"))]
+    {
+        dirs::home_dir()
+            .unwrap_or_default()
+            .join(".markscout")
+            .join("window-state.json")
+    }
 }
 
 fn load_window_state() -> Option<WindowState> {

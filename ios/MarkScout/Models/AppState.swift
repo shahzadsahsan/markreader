@@ -66,6 +66,13 @@ class AppState {
         onboardingCompleted = true
     }
 
+    func resetSync() {
+        UserDefaults.standard.removeObject(forKey: "syncFolderBookmark")
+        manifest = nil
+        selectedFile = nil
+        onboardingCompleted = false
+    }
+
     func isFavorite(_ relativePath: String) -> Bool {
         manifest?.favorites.contains { $0.relativePath == relativePath } ?? false
     }

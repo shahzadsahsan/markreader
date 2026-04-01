@@ -1,6 +1,4 @@
 import Foundation
-import UIKit
-import UniformTypeIdentifiers
 
 class SyncFolderManager {
     private let bookmarkKey = "syncFolderBookmark"
@@ -10,7 +8,11 @@ class SyncFolderManager {
     }
 
     func saveBookmark(for url: URL) throws {
-        let data = try url.bookmarkData(options: .minimalBookmark, includingResourceValuesForKeys: nil, relativeTo: nil)
+        guard url.startAccessingSecurityScopedResource() else {
+            throw SyncError.accessDenied
+        }
+        defer { url.stopAccessingSecurityScopedResource() }
+        let data = try url.bookmarkData(options: [], includingResourceValuesForKeys: nil, relativeTo: nil)
         UserDefaults.standard.set(data, forKey: bookmarkKey)
     }
 
@@ -167,71 +169,3 @@ enum SyncError: LocalizedError {
     }
 }
 
-// MARK: - Document Picker Coordinator
-
-struct FolderPickerResult {
-    let url: URL
-    let manifest: SyncManifest
-}
-
-/// Simple coordinator that just saves the bookmark and returns the URL.
-/// The caller handles manifest reading separately (with proper UI feedback).
-class SimpleFolderPickerCoordinator: NSObject, UIDocumentPickerDelegate {
-    let completion: (URL?) -> Void
-    private let folderManager: SyncFolderManager
-
-    init(folderManager: SyncFolderManager, completion: @escaping (URL?) -> Void) {
-        self.folderManager = folderManager
-        self.completion = completion
-    }
-
-    func documentPicker(_ controller: UIDocumentPickerViewController, didPickDocumentsAt urls: [URL]) {
-        guard let url = urls.first else { completion(nil); return }
-        do {
-            try folderManager.saveBookmark(for: url)
-            completion(url)
-        } catch {
-            completion(nil)
-        }
-    }
-
-    func documentPickerWasCancelled(_ controller: UIDocumentPickerViewController) {
-        completion(nil)
-    }
-}
-
-class FolderPickerCoordinator: NSObject, UIDocumentPickerDelegate {
-    let completion: (Result<FolderPickerResult, Error>) -> Void
-    private let folderManager: SyncFolderManager
-
-    init(folderManager: SyncFolderManager, completion: @escaping (Result<FolderPickerResult, Error>) -> Void) {
-        self.folderManager = folderManager
-        self.completion = completion
-    }
-
-    func documentPicker(_ controller: UIDocumentPickerViewController, didPickDocumentsAt urls: [URL]) {
-        guard let url = urls.first else { return }
-        do {
-            try folderManager.saveBookmark(for: url)
-        } catch {
-            completion(.failure(error))
-            return
-        }
-        Task {
-            do {
-                let manifest = try await folderManager.readManifest()
-                await MainActor.run {
-                    completion(.success(FolderPickerResult(url: url, manifest: manifest)))
-                }
-            } catch {
-                await MainActor.run {
-                    completion(.failure(error))
-                }
-            }
-        }
-    }
-
-    func documentPickerWasCancelled(_ controller: UIDocumentPickerViewController) {
-        completion(.failure(SyncError.noBookmark))
-    }
-}

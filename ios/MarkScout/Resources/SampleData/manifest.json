@@ -1,47 +1,47 @@
 {
   "version": 1,
-  "synced_at": 1711701600000,
-  "file_count": 4,
-  "total_size": 24255,
+  "syncedAt": 1711701600000,
+  "fileCount": 4,
+  "totalSize": 24255,
   "files": [
     {
-      "relative_path": "markreader/ARCHITECTURE.md",
+      "relativePath": "markreader/ARCHITECTURE.md",
       "name": "ARCHITECTURE",
       "project": "markreader",
-      "modified_at": 1711701600000,
+      "modifiedAt": 1711701600000,
       "size": 15279,
-      "content_hash": "sample-arch-001"
+      "contentHash": "sample-arch-001"
     },
     {
-      "relative_path": "markreader/REQUIREMENTS.md",
+      "relativePath": "markreader/REQUIREMENTS.md",
       "name": "REQUIREMENTS",
       "project": "markreader",
-      "modified_at": 1711698000000,
+      "modifiedAt": 1711698000000,
       "size": 5642,
-      "content_hash": "sample-req-002"
+      "contentHash": "sample-req-002"
     },
     {
-      "relative_path": "markreader/CLAUDE.md",
+      "relativePath": "markreader/CLAUDE.md",
       "name": "CLAUDE",
       "project": "markreader",
-      "modified_at": 1711694400000,
+      "modifiedAt": 1711694400000,
       "size": 2517,
-      "content_hash": "sample-claude-003"
+      "contentHash": "sample-claude-003"
     },
     {
-      "relative_path": ".claude/memory/project-context.md",
+      "relativePath": ".claude/memory/project-context.md",
       "name": "project-context",
       "project": ".claude",
-      "modified_at": 1711690800000,
+      "modifiedAt": 1711690800000,
       "size": 817,
-      "content_hash": "sample-ctx-004"
+      "contentHash": "sample-ctx-004"
     }
   ],
   "favorites": [
     {
-      "relative_path": "markreader/ARCHITECTURE.md",
-      "content_hash": "sample-arch-001",
-      "starred_at": 1711701600000
+      "relativePath": "markreader/ARCHITECTURE.md",
+      "contentHash": "sample-arch-001",
+      "starredAt": 1711701600000
     }
   ]
 }

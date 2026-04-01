@@ -15,9 +15,41 @@ use crate::types::{
 const HISTORY_LIMIT: usize = 50;
 
 fn state_dir() -> PathBuf {
-    dirs::home_dir()
-        .expect("Could not determine home directory")
-        .join(".markscout")
+    #[cfg(feature = "mas")]
+    {
+        // Mac App Store: use sandboxed container
+        // ~/Library/Containers/com.markscout.app/Data/Library/Application Support/com.markscout.app/
+        dirs::data_local_dir()
+            .expect("Could not determine app data directory")
+            .join("com.markscout.app")
+    }
+    #[cfg(not(feature = "mas"))]
+    {
+        dirs::home_dir()
+            .expect("Could not determine home directory")
+            .join(".markscout")
+    }
+}
+
+/// For MAS builds: migrate state from ~/.markscout/ to the sandboxed container
+/// on first launch. This preserves favorites, history, and settings.
+#[cfg(feature = "mas")]
+fn migrate_from_legacy_dir() {
+    let legacy_dir = dirs::home_dir()
+        .map(|h| h.join(".markscout"));
+    let legacy_state = legacy_dir.as_ref().map(|d| d.join("state.json"));
+
+    if let Some(legacy_path) = legacy_state {
+        if legacy_path.exists() {
+            let target = state_file();
+            if !target.exists() {
+                if let Some(parent) = target.parent() {
+                    let _ = std::fs::create_dir_all(parent);
+                }
+                let _ = std::fs::copy(&legacy_path, &target);
+            }
+        }
+    }
 }
 
 fn state_file() -> PathBuf {
@@ -26,6 +58,11 @@ fn state_file() -> PathBuf {
 
 fn state_tmp() -> PathBuf {
     state_dir().join("state.json.tmp")
+}
+
+/// Public path for crash.log (used by system commands)
+pub fn crash_log_path() -> PathBuf {
+    state_dir().join("crash.log")
 }
 
 fn now_millis() -> u64 {
@@ -83,6 +120,10 @@ pub struct AppStateManager {
 impl AppStateManager {
     /// Load state from disk, or create a default if missing/corrupt.
     pub fn new() -> Result<Self, Box<dyn std::error::Error>> {
+        // MAS builds: migrate legacy ~/.markscout/ state to sandbox container
+        #[cfg(feature = "mas")]
+        migrate_from_legacy_dir();
+
         let path = state_file();
         let (state, first_run) = if path.exists() {
             match std::fs::read_to_string(&path) {

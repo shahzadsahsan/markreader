@@ -1,4 +1,5 @@
 import SwiftUI
+import UniformTypeIdentifiers
 
 struct SettingsView: View {
     @Bindable var appState: AppState
@@ -7,8 +8,7 @@ struct SettingsView: View {
 
     @State private var showClearConfirm = false
     @State private var showResetConfirm = false
-    @State private var showFolderPicker = false
-    @State private var pickerCoordinator: FolderPickerCoordinator?
+    @State private var showingFolderPicker = false
     @State private var isDownloadingAll = false
     @State private var downloadProgress: (current: Int, total: Int) = (0, 0)
     @State private var downloadError: String?
@@ -68,7 +68,7 @@ struct SettingsView: View {
 
                 if !isInDemoMode {
                     Button("Change Sync Folder") {
-                        changeSyncFolder()
+                        showingFolderPicker = true
                     }
                     .foregroundStyle(Color.amber)
                     .listRowBackground(Color.msSurface)
@@ -240,6 +240,24 @@ struct SettingsView: View {
         } message: {
             Text("This will remove all cached files. They will be re-downloaded when you refresh.")
         }
+        .fileImporter(isPresented: $showingFolderPicker, allowedContentTypes: [.folder]) { result in
+            switch result {
+            case .success(let url):
+                do {
+                    try folderManager.saveBookmark(for: url)
+                    Task {
+                        if let manifest = try? await folderManager.readManifest() {
+                            appState.manifest = manifest
+                            appState.lastSyncCheck = Date()
+                        }
+                    }
+                } catch {
+                    downloadError = "Failed to save folder: \(error.localizedDescription)"
+                }
+            case .failure(let error):
+                downloadError = "Picker error: \(error.localizedDescription)"
+            }
+        }
         .alert("Switch to Real Sync", isPresented: $showResetConfirm) {
             Button("Cancel", role: .cancel) { }
             Button("Switch") {
@@ -297,22 +315,4 @@ struct SettingsView: View {
         }
     }
 
-    private func changeSyncFolder() {
-        let picker = UIDocumentPickerViewController(forOpeningContentTypes: [.folder])
-        picker.allowsMultipleSelection = false
-
-        let coordinator = FolderPickerCoordinator(folderManager: folderManager) { result in
-            if case .success(let pickerResult) = result {
-                appState.manifest = pickerResult.manifest
-                appState.lastSyncCheck = Date()
-            }
-        }
-        picker.delegate = coordinator
-        self.pickerCoordinator = coordinator
-
-        if let scene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
-           let root = scene.windows.first?.rootViewController {
-            root.present(picker, animated: true)
-        }
-    }
 }

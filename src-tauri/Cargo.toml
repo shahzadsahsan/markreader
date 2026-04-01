@@ -21,6 +21,10 @@ semver = "1"
 dashmap = "6"
 log = "0.4"
 
+[features]
+default = []
+mas = []  # Mac App Store build: sandbox paths, no update checker
+
 [build-dependencies]
 tauri-build = { version = "2", features = [] }
 

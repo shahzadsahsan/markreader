@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MarkScout — Privacy Policy</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Source+Serif+4:ital,wght@0,400;0,600;1,400&display=swap');
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background: #0d0d0d;
+      color: #e0e0e0;
+      font-family: 'Source Serif 4', Georgia, serif;
+      font-size: 18px;
+      line-height: 1.7;
+      padding: 48px 24px;
+    }
+
+    .container {
+      max-width: 680px;
+      margin: 0 auto;
+    }
+
+    h1 {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 28px;
+      font-weight: 600;
+      color: #d4a04a;
+      margin-bottom: 8px;
+      border-bottom: 2px solid #d4a04a;
+      padding-bottom: 12px;
+    }
+
+    .last-updated {
+      font-size: 14px;
+      color: #888;
+      font-family: 'JetBrains Mono', monospace;
+      margin-bottom: 40px;
+    }
+
+    h2 {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 20px;
+      font-weight: 600;
+      color: #e0e0e0;
+      margin-top: 36px;
+      margin-bottom: 12px;
+    }
+
+    h3 {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 17px;
+      font-weight: 600;
+      color: #ccc;
+      margin-top: 24px;
+      margin-bottom: 8px;
+    }
+
+    p { margin-bottom: 16px; }
+
+    ul {
+      margin-bottom: 16px;
+      padding-left: 24px;
+    }
+
+    li { margin-bottom: 8px; }
+
+    a {
+      color: #d4a04a;
+      text-decoration: none;
+    }
+
+    a:hover { text-decoration: underline; }
+
+    .footer {
+      margin-top: 60px;
+      padding-top: 24px;
+      border-top: 1px solid #2a2a2a;
+      font-size: 14px;
+      color: #888;
+      font-family: 'JetBrains Mono', monospace;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Privacy Policy</h1>
+    <p class="last-updated">Last updated: April 1, 2026</p>
+
+    <p>MarkScout is a local-only markdown file browser for macOS and iOS. Your privacy is fundamental to how we built this app.</p>
+
+    <h2>What We Collect</h2>
+    <p><strong>Nothing.</strong> MarkScout does not collect, transmit, or store any personal data on external servers. There are no analytics, no tracking, no telemetry, and no advertising.</p>
+
+    <h2>macOS App</h2>
+
+    <h3>Data Stored on Your Device</h3>
+    <p>The macOS app stores the following data locally on your device:</p>
+    <ul>
+      <li><strong>App state</strong> &mdash; your favorites, reading history, filter preferences, zoom level, sidebar width, and scroll positions, stored in the app's sandboxed container directory.</li>
+      <li><strong>Window state</strong> &mdash; window position and size so MarkScout reopens where you left it.</li>
+      <li><strong>Watch directory paths</strong> &mdash; the folders you selected for MarkScout to scan, stored in the app container.</li>
+    </ul>
+
+    <h3>File Access</h3>
+    <p>MarkScout reads markdown files from directories you explicitly select via the macOS file picker. The app has read-only access to your .md files and never modifies, deletes, or creates files in your watched directories.</p>
+
+    <h3>iCloud Sync (Optional)</h3>
+    <p>When iCloud sync is enabled in Settings, MarkScout copies your markdown files to a MarkScout folder in your iCloud Drive so the companion iOS app can read them. This is off by default. iCloud Drive sync is managed by Apple's operating system.</p>
+
+    <h3>Network Access</h3>
+    <p>The direct-download version of MarkScout makes a single HTTPS request to GitHub to check for updates. The Mac App Store version makes no network requests &mdash; Apple handles updates.</p>
+
+    <h2>iOS App</h2>
+
+    <h3>Data Stored on Your Device</h3>
+    <p>The iOS app stores the following data locally using standard iOS mechanisms:</p>
+    <ul>
+      <li><strong>Sync folder bookmark</strong> &mdash; a security-scoped bookmark to the iCloud Drive folder you selected, stored in UserDefaults.</li>
+      <li><strong>Reading preferences</strong> &mdash; your selected theme, zoom level, and reading positions, stored in UserDefaults.</li>
+      <li><strong>Cached files</strong> &mdash; copies of your markdown files in the app's Documents directory for offline reading. You can clear this cache from Settings.</li>
+      <li><strong>Spotlight index</strong> &mdash; file titles and excerpts indexed via Core Spotlight so your files appear in system search.</li>
+    </ul>
+
+    <h3>iCloud Drive</h3>
+    <p>MarkScout reads markdown files from a folder in your iCloud Drive that you explicitly select. The app has read-only access and never modifies, deletes, or uploads any files. iCloud Drive sync is managed by Apple's operating system.</p>
+
+    <h3>Network Access</h3>
+    <p>The iOS app makes no network requests. The only network activity is iOS downloading files from iCloud Drive, handled by the operating system.</p>
+
+    <h2>Third-Party Services</h2>
+    <p>MarkScout uses no third-party SDKs, analytics frameworks, crash reporters, or advertising networks on either platform.</p>
+
+    <h2>Children's Privacy</h2>
+    <p>MarkScout does not collect any data from anyone, including children under 13.</p>
+
+    <h2>Changes to This Policy</h2>
+    <p>If we ever change this policy, we'll update the date above and include the new policy in the next app update.</p>
+
+    <h2>Contact</h2>
+    <p>Questions about this policy? Reach out at <a href="mailto:shahzad@markscout.app">shahzad@markscout.app</a>.</p>
+
+    <div class="footer">
+      MarkScout &mdash; a local-only markdown browser for macOS and iOS.
+    </div>
+  </div>
+</body>
+</html>

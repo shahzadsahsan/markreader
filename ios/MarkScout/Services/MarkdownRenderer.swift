@@ -34,6 +34,7 @@ struct MarkdownWebView: UIViewRepresentable {
         webView.scrollView.alwaysBounceHorizontal = false
         webView.scrollView.contentInsetAdjustmentBehavior = .never
         webView.navigationDelegate = context.coordinator
+        webView.isFindInteractionEnabled = true
 
         // Load reader.html from bundle
         if let htmlURL = Bundle.main.url(forResource: "reader", withExtension: "html") {
@@ -41,6 +42,12 @@ struct MarkdownWebView: UIViewRepresentable {
         }
 
         context.coordinator.webView = webView
+
+        // Listen for find-in-page trigger
+        NotificationCenter.default.addObserver(forName: .triggerFindInPage, object: nil, queue: .main) { _ in
+            webView.findInteraction?.presentFindNavigator(showingReplace: false)
+        }
+
         return webView
     }
 

@@ -4,6 +4,7 @@
 use std::path::Path;
 
 use tauri::Manager;
+use tauri_plugin_shell::ShellExt;
 
 use crate::watcher::FileWatcher;
 
@@ -29,11 +30,10 @@ pub async fn reveal_in_finder(
         return Err("Path not in watched directories".to_string());
     }
 
-    // macOS: open -R reveals in Finder
-    std::process::Command::new("open")
-        .arg("-R")
-        .arg(&path)
-        .spawn()
+    // Use Tauri shell plugin to open via the system (sandbox-safe)
+    app_handle
+        .shell()
+        .open(format!("file://{}", path), None)
         .map_err(|e| format!("Failed to reveal in Finder: {}", e))?;
 
     Ok(())
@@ -44,26 +44,30 @@ pub async fn reveal_in_finder(
 // ---------------------------------------------------------------------------
 
 #[tauri::command]
-pub async fn open_external(url: String) -> Result<(), String> {
-    std::process::Command::new("open")
-        .arg(&url)
-        .spawn()
+pub async fn open_external(
+    url: String,
+    app_handle: tauri::AppHandle,
+) -> Result<(), String> {
+    // Use Tauri shell plugin (sandbox-safe)
+    app_handle
+        .shell()
+        .open(&url, None)
         .map_err(|e| format!("Failed to open URL: {}", e))?;
 
     Ok(())
 }
 
 // ---------------------------------------------------------------------------
-// write_crash_log — append diagnostic entries to ~/.markscout/crash.log
+// write_crash_log — append diagnostic entries to crash.log
 // ---------------------------------------------------------------------------
 
 #[tauri::command]
 pub async fn write_crash_log(entry: String) -> Result<(), String> {
     use std::io::Write;
-    let log_path = dirs::home_dir()
-        .unwrap_or_default()
-        .join(".markscout")
-        .join("crash.log");
+
+    // Use the same state directory as AppStateManager (sandbox-aware)
+    let log_path = crate::state::crash_log_path();
+
     if let Some(parent) = log_path.parent() {
         let _ = std::fs::create_dir_all(parent);
     }
@@ -79,6 +83,7 @@ pub async fn write_crash_log(entry: String) -> Result<(), String> {
 
 // ---------------------------------------------------------------------------
 // check_for_update — check GitHub releases for a newer version
+// (Disabled for Mac App Store builds — Apple handles updates)
 // ---------------------------------------------------------------------------
 
 #[derive(Debug, Clone, serde::Serialize)]
@@ -96,19 +101,9 @@ pub async fn check_for_update(
 ) -> Result<UpdateCheckResult, String> {
     let current_version = app_handle.config().version.clone().unwrap_or_else(|| "1.0.0".to_string());
 
-    // Fetch latest release from GitHub
-    let client = reqwest::Client::builder()
-        .user_agent("markscout-updater")
-        .build()
-        .map_err(|e| format!("Failed to create HTTP client: {}", e))?;
-
-    let response = client
-        .get("https://api.github.com/repos/shahzadafzal/markscout/releases/latest")
-        .send()
-        .await
-        .map_err(|e| format!("Failed to fetch release info: {}", e))?;
-
-    if !response.status().is_success() {
+    // Mac App Store builds: Apple handles updates, skip GitHub check
+    #[cfg(feature = "mas")]
+    {
         return Ok(UpdateCheckResult {
             has_update: false,
             latest_version: current_version.clone(),
@@ -117,35 +112,58 @@ pub async fn check_for_update(
         });
     }
 
-    let release: serde_json::Value = response
-        .json()
-        .await
-        .map_err(|e| format!("Failed to parse release JSON: {}", e))?;
+    // Direct distribution: check GitHub releases
+    #[cfg(not(feature = "mas"))]
+    {
+        let client = reqwest::Client::builder()
+            .user_agent("markscout-updater")
+            .build()
+            .map_err(|e| format!("Failed to create HTTP client: {}", e))?;
 
-    let tag_name = release["tag_name"]
-        .as_str()
-        .unwrap_or("")
-        .trim_start_matches('v')
-        .to_string();
+        let response = client
+            .get("https://api.github.com/repos/shahzadafzal/markscout/releases/latest")
+            .send()
+            .await
+            .map_err(|e| format!("Failed to fetch release info: {}", e))?;
 
-    let download_url = release["html_url"]
-        .as_str()
-        .unwrap_or("")
-        .to_string();
+        if !response.status().is_success() {
+            return Ok(UpdateCheckResult {
+                has_update: false,
+                latest_version: current_version.clone(),
+                download_url: String::new(),
+                current_version,
+            });
+        }
 
-    // Compare versions using semver
-    let has_update = match (
-        semver::Version::parse(&tag_name),
-        semver::Version::parse(&current_version),
-    ) {
-        (Ok(latest), Ok(current)) => latest > current,
-        _ => false,
-    };
+        let release: serde_json::Value = response
+            .json()
+            .await
+            .map_err(|e| format!("Failed to parse release JSON: {}", e))?;
 
-    Ok(UpdateCheckResult {
-        has_update,
-        latest_version: tag_name,
-        download_url,
-        current_version,
-    })
+        let tag_name = release["tag_name"]
+            .as_str()
+            .unwrap_or("")
+            .trim_start_matches('v')
+            .to_string();
+
+        let download_url = release["html_url"]
+            .as_str()
+            .unwrap_or("")
+            .to_string();
+
+        let has_update = match (
+            semver::Version::parse(&tag_name),
+            semver::Version::parse(&current_version),
+        ) {
+            (Ok(latest), Ok(current)) => latest > current,
+            _ => false,
+        };
+
+        Ok(UpdateCheckResult {
+            has_update,
+            latest_version: tag_name,
+            download_url,
+            current_version,
+        })
+    }
 }
