@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5, user-scalable=yes">
+  <link rel="stylesheet" href="reader.css">
+  <link rel="stylesheet" href="github-dark.min.css">
+  <script src="highlight.min.js"></script>
+  <script src="marked.min.js"></script>
+</head>
+<body>
+  <article id="content"></article>
+  <script>
+    // Configure marked for GFM
+    marked.setOptions({
+      gfm: true,
+      breaks: false,
+      headerIds: true,
+      mangle: false
+    });
+
+    function renderMarkdown(raw) {
+      document.getElementById('content').innerHTML = marked.parse(raw);
+      document.querySelectorAll('pre code').forEach(function(el) {
+        hljs.highlightElement(el);
+      });
+      // Extract headings for TOC
+      extractHeadings();
+      // Set up intersection observer for active heading tracking
+      setupHeadingObserver();
+    }
+
+    function setPalette(vars) {
+      for (var k in vars) {
+        document.documentElement.style.setProperty(k, vars[k]);
+      }
+    }
+
+    function setZoom(level) {
+      document.documentElement.style.fontSize = 'calc(18px * ' + level + ')';
+    }
+
+    // Scroll position
+    function getScrollPercentage() {
+      if (document.body.scrollHeight <= window.innerHeight) return 0;
+      return window.pageYOffset / (document.body.scrollHeight - window.innerHeight);
+    }
+
+    function setScrollPercentage(pct) {
+      var target = pct * (document.body.scrollHeight - window.innerHeight);
+      window.scrollTo(0, target);
+    }
+
+    // Report scroll to Swift on scroll end
+    var scrollTimer = null;
+    window.addEventListener('scroll', function() {
+      clearTimeout(scrollTimer);
+      scrollTimer = setTimeout(function() {
+        var pct = getScrollPercentage();
+        window.webkit.messageHandlers.scrollPosition.postMessage(pct);
+        // Report active heading
+        reportActiveHeading();
+      }, 150);
+    });
+
+    // TOC heading extraction
+    function extractHeadings() {
+      var headings = document.querySelectorAll('h1, h2, h3, h4, h5, h6');
+      var result = [];
+      headings.forEach(function(h, i) {
+        if (!h.id) h.id = 'heading-' + i;
+        result.push({
+          id: h.id,
+          text: h.textContent,
+          level: parseInt(h.tagName.charAt(1))
+        });
+      });
+      try {
+        window.webkit.messageHandlers.headings.postMessage(JSON.stringify(result));
+      } catch(e) {}
+    }
+
+    // Active heading tracking
+    var currentActiveHeading = null;
+
+    function setupHeadingObserver() {
+      var headings = document.querySelectorAll('h1, h2, h3, h4, h5, h6');
+      if (!headings.length) return;
+
+      var observer = new IntersectionObserver(function(entries) {
+        entries.forEach(function(entry) {
+          if (entry.isIntersecting) {
+            currentActiveHeading = entry.target.id;
+          }
+        });
+        reportActiveHeading();
+      }, { rootMargin: '-10% 0px -80% 0px' });
+
+      headings.forEach(function(h) { observer.observe(h); });
+    }
+
+    function reportActiveHeading() {
+      if (currentActiveHeading) {
+        try {
+          window.webkit.messageHandlers.activeHeading.postMessage(currentActiveHeading);
+        } catch(e) {}
+      }
+    }
+
+    function scrollToHeading(id) {
+      var el = document.getElementById(id);
+      if (el) el.scrollIntoView({ behavior: 'smooth' });
+    }
+
+    // Intercept link clicks to open in Safari
+    document.addEventListener('click', function(e) {
+      var link = e.target.closest('a');
+      if (link && link.href && !link.href.startsWith('javascript:')) {
+        e.preventDefault();
+        window.webkit.messageHandlers.linkTapped.postMessage(link.href);
+      }
+    });
+  </script>
+</body>
+</html>

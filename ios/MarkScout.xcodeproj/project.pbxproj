@@ -1,0 +1,468 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 56;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		AAA00001 /* MarkScoutApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBB00001; };
+		AAA00002 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBB00002; };
+		AAA00003 /* SyncManifest.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBB00003; };
+		AAA00004 /* AppState.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBB00004; };
+		AAA00005 /* Palette.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBB00005; };
+		AAA00006 /* SyncFolderManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBB00006; };
+		AAA00007 /* LocalCacheManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBB00007; };
+		AAA00008 /* MarkdownRenderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBB00008; };
+		AAA00009 /* OnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBB00009; };
+		AAA00010 /* FileListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBB00010; };
+		AAA00011 /* FileDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBB00011; };
+		AAA00012 /* FolderBrowserView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBB00012; };
+		AAA00013 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBB00013; };
+		AAA00014 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = BBB00014; };
+		AAA00015 /* reader.html in Resources */ = {isa = PBXBuildFile; fileRef = BBB00015; };
+		AAA00016 /* reader.css in Resources */ = {isa = PBXBuildFile; fileRef = BBB00016; };
+		AAA00017 /* marked.min.js in Resources */ = {isa = PBXBuildFile; fileRef = BBB00017; };
+		AAA00018 /* highlight.min.js in Resources */ = {isa = PBXBuildFile; fileRef = BBB00018; };
+		AAA00019 /* github-dark.min.css in Resources */ = {isa = PBXBuildFile; fileRef = BBB00019; };
+		AAA00020 /* JetBrainsMono-Regular.woff2 in Resources */ = {isa = PBXBuildFile; fileRef = BBB00020; };
+		AAA00021 /* SourceSerif4-Regular.woff2 in Resources */ = {isa = PBXBuildFile; fileRef = BBB00021; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		BBB00000 /* MarkScout.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MarkScout.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		BBB00001 /* MarkScoutApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MarkScoutApp.swift; sourceTree = "<group>"; };
+		BBB00002 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		BBB00003 /* SyncManifest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncManifest.swift; sourceTree = "<group>"; };
+		BBB00004 /* AppState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppState.swift; sourceTree = "<group>"; };
+		BBB00005 /* Palette.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Palette.swift; sourceTree = "<group>"; };
+		BBB00006 /* SyncFolderManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncFolderManager.swift; sourceTree = "<group>"; };
+		BBB00007 /* LocalCacheManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalCacheManager.swift; sourceTree = "<group>"; };
+		BBB00008 /* MarkdownRenderer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MarkdownRenderer.swift; sourceTree = "<group>"; };
+		BBB00009 /* OnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingView.swift; sourceTree = "<group>"; };
+		BBB00010 /* FileListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileListView.swift; sourceTree = "<group>"; };
+		BBB00011 /* FileDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileDetailView.swift; sourceTree = "<group>"; };
+		BBB00012 /* FolderBrowserView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FolderBrowserView.swift; sourceTree = "<group>"; };
+		BBB00013 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+		BBB00014 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		BBB00015 /* reader.html */ = {isa = PBXFileReference; lastKnownFileType = text.html; path = reader.html; sourceTree = "<group>"; };
+		BBB00016 /* reader.css */ = {isa = PBXFileReference; lastKnownFileType = text.css; path = reader.css; sourceTree = "<group>"; };
+		BBB00017 /* marked.min.js */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.javascript; path = marked.min.js; sourceTree = "<group>"; };
+		BBB00018 /* highlight.min.js */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.javascript; path = highlight.min.js; sourceTree = "<group>"; };
+		BBB00019 /* github-dark.min.css */ = {isa = PBXFileReference; lastKnownFileType = text.css; path = "github-dark.min.css"; sourceTree = "<group>"; };
+		BBB00020 /* JetBrainsMono-Regular.woff2 */ = {isa = PBXFileReference; lastKnownFileType = file; path = "JetBrainsMono-Regular.woff2"; sourceTree = "<group>"; };
+		BBB00021 /* SourceSerif4-Regular.woff2 */ = {isa = PBXFileReference; lastKnownFileType = file; path = "SourceSerif4-Regular.woff2"; sourceTree = "<group>"; };
+		BBB00022 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		CCC00001 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		DDD00001 = {
+			isa = PBXGroup;
+			children = (
+				DDD00002 /* MarkScout */,
+				DDD00010 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		DDD00002 /* MarkScout */ = {
+			isa = PBXGroup;
+			children = (
+				DDD00003 /* App */,
+				DDD00004 /* Models */,
+				DDD00005 /* Services */,
+				DDD00006 /* Views */,
+				DDD00007 /* Resources */,
+				BBB00014 /* Assets.xcassets */,
+				BBB00022 /* Info.plist */,
+			);
+			path = MarkScout;
+			sourceTree = "<group>";
+		};
+		DDD00003 /* App */ = {
+			isa = PBXGroup;
+			children = (
+				BBB00001 /* MarkScoutApp.swift */,
+				BBB00002 /* ContentView.swift */,
+			);
+			path = App;
+			sourceTree = "<group>";
+		};
+		DDD00004 /* Models */ = {
+			isa = PBXGroup;
+			children = (
+				BBB00003 /* SyncManifest.swift */,
+				BBB00004 /* AppState.swift */,
+				BBB00005 /* Palette.swift */,
+			);
+			path = Models;
+			sourceTree = "<group>";
+		};
+		DDD00005 /* Services */ = {
+			isa = PBXGroup;
+			children = (
+				BBB00006 /* SyncFolderManager.swift */,
+				BBB00007 /* LocalCacheManager.swift */,
+				BBB00008 /* MarkdownRenderer.swift */,
+			);
+			path = Services;
+			sourceTree = "<group>";
+		};
+		DDD00006 /* Views */ = {
+			isa = PBXGroup;
+			children = (
+				DDD00008 /* Onboarding */,
+				BBB00010 /* FileListView.swift */,
+				BBB00011 /* FileDetailView.swift */,
+				BBB00012 /* FolderBrowserView.swift */,
+				BBB00013 /* SettingsView.swift */,
+			);
+			path = Views;
+			sourceTree = "<group>";
+		};
+		DDD00007 /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				BBB00015 /* reader.html */,
+				BBB00016 /* reader.css */,
+				BBB00017 /* marked.min.js */,
+				BBB00018 /* highlight.min.js */,
+				BBB00019 /* github-dark.min.css */,
+				BBB00020 /* JetBrainsMono-Regular.woff2 */,
+				BBB00021 /* SourceSerif4-Regular.woff2 */,
+			);
+			path = Resources;
+			sourceTree = "<group>";
+		};
+		DDD00008 /* Onboarding */ = {
+			isa = PBXGroup;
+			children = (
+				BBB00009 /* OnboardingView.swift */,
+			);
+			path = Onboarding;
+			sourceTree = "<group>";
+		};
+		DDD00010 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				BBB00000 /* MarkScout.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		EEE00001 /* MarkScout */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = FFF00003;
+			buildPhases = (
+				EEE00002 /* Sources */,
+				CCC00001 /* Frameworks */,
+				EEE00003 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = MarkScout;
+			productName = MarkScout;
+			productReference = BBB00000 /* MarkScout.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		GGG00001 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastSwiftUpdateCheck = 1540;
+				LastUpgradeCheck = 1540;
+				TargetAttributes = {
+					EEE00001 = {
+						CreatedOnToolsVersion = 15.4;
+					};
+				};
+			};
+			buildConfigurationList = FFF00001;
+			compatibilityVersion = "Xcode 14.0";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = DDD00001;
+			productRefGroup = DDD00010 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				EEE00001 /* MarkScout */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		EEE00003 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				AAA00014 /* Assets.xcassets in Resources */,
+				AAA00015 /* reader.html in Resources */,
+				AAA00016 /* reader.css in Resources */,
+				AAA00017 /* marked.min.js in Resources */,
+				AAA00018 /* highlight.min.js in Resources */,
+				AAA00019 /* github-dark.min.css in Resources */,
+				AAA00020 /* JetBrainsMono-Regular.woff2 in Resources */,
+				AAA00021 /* SourceSerif4-Regular.woff2 in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		EEE00002 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				AAA00001 /* MarkScoutApp.swift in Sources */,
+				AAA00002 /* ContentView.swift in Sources */,
+				AAA00003 /* SyncManifest.swift in Sources */,
+				AAA00004 /* AppState.swift in Sources */,
+				AAA00005 /* Palette.swift in Sources */,
+				AAA00006 /* SyncFolderManager.swift in Sources */,
+				AAA00007 /* LocalCacheManager.swift in Sources */,
+				AAA00008 /* MarkdownRenderer.swift in Sources */,
+				AAA00009 /* OnboardingView.swift in Sources */,
+				AAA00010 /* FileListView.swift in Sources */,
+				AAA00011 /* FileDetailView.swift in Sources */,
+				AAA00012 /* FolderBrowserView.swift in Sources */,
+				AAA00013 /* SettingsView.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		FFF00010 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+			};
+			name = Debug;
+		};
+		FFF00011 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				SDKROOT = iphoneos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+		FFF00020 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = "";
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = MarkScout/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = MarkScout;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UIStatusBarStyle = UIStatusBarStyleLightContent;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.markscout.ios;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_STRICT_CONCURRENCY = complete;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		FFF00021 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = "";
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = MarkScout/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = MarkScout;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UIStatusBarStyle = UIStatusBarStyleLightContent;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.markscout.ios;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_STRICT_CONCURRENCY = complete;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		FFF00001 /* Build configuration list for PBXProject "MarkScout" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				FFF00010 /* Debug */,
+				FFF00011 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		FFF00003 /* Build configuration list for PBXNativeTarget "MarkScout" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				FFF00020 /* Debug */,
+				FFF00021 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+
+	};
+	rootObject = GGG00001 /* Project object */;
+}
