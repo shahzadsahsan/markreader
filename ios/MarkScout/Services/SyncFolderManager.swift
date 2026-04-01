@@ -38,18 +38,24 @@ class SyncFolderManager {
         let manifestURL = folderURL.appendingPathComponent("manifest.json")
 
         // Check if the file exists at all (even as an iCloud placeholder)
-        let exists = FileManager.default.fileExists(atPath: manifestURL.path)
-        if !exists {
-            // Check if there's an .icloud placeholder
-            let icloudName = ".\(manifestURL.lastPathComponent).icloud"
-            let icloudURL = manifestURL.deletingLastPathComponent().appendingPathComponent(icloudName)
-            let placeholderExists = FileManager.default.fileExists(atPath: icloudURL.path)
+        let fm = FileManager.default
+        let exists = fm.fileExists(atPath: manifestURL.path)
 
-            if !placeholderExists {
-                // List what IS in the folder to help debug
-                let contents = (try? FileManager.default.contentsOfDirectory(atPath: folderURL.path)) ?? []
+        if !exists {
+            // Check if there's an .icloud placeholder (evicted file)
+            let icloudName = ".manifest.json.icloud"
+            let icloudURL = folderURL.appendingPathComponent(icloudName)
+            let placeholderExists = fm.fileExists(atPath: icloudURL.path)
+
+            if placeholderExists {
+                // File exists but is evicted — trigger download
+                try? fm.startDownloadingUbiquitousItem(at: manifestURL)
+            } else {
+                // Neither file nor placeholder — list what IS in the folder
+                let contents = (try? fm.contentsOfDirectory(atPath: folderURL.path)) ?? []
+                let listing = contents.isEmpty ? "empty folder" : contents.prefix(20).joined(separator: ", ")
                 throw SyncError.manifestNotFoundDetail(
-                    "manifest.json not found in selected folder. Folder contains: \(contents.isEmpty ? "nothing" : contents.joined(separator: ", "))"
+                    "manifest.json not in: \(folderURL.lastPathComponent)/\n\nFolder path: \(folderURL.path)\n\nContents: \(listing)"
                 )
             }
         }
