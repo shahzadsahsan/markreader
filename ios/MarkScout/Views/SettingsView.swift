@@ -6,54 +6,108 @@ struct SettingsView: View {
     let cacheManager: LocalCacheManager
 
     @State private var showClearConfirm = false
+    @State private var showResetConfirm = false
     @State private var showFolderPicker = false
     @State private var pickerCoordinator: FolderPickerCoordinator?
     @State private var isDownloadingAll = false
     @State private var downloadProgress: (current: Int, total: Int) = (0, 0)
+    @State private var downloadError: String?
+
+    private var isInDemoMode: Bool { DemoDataManager.shared.isActive }
 
     var body: some View {
         List {
+            // Demo mode banner
+            if isInDemoMode {
+                Section {
+                    HStack {
+                        Image(systemName: "play.rectangle.fill")
+                            .foregroundStyle(Color.amber)
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("Demo Mode Active")
+                                .font(.system(.body, design: .monospaced))
+                                .fontWeight(.semibold)
+                                .foregroundStyle(Color.msText)
+                            Text("Using bundled sample data. Switch to your real iCloud sync folder below.")
+                                .font(.caption)
+                                .foregroundStyle(Color.msMuted)
+                        }
+                    }
+                    .listRowBackground(Color.amber.opacity(0.1))
+
+                    Button {
+                        showResetConfirm = true
+                    } label: {
+                        Label("Switch to Real Sync Folder", systemImage: "icloud.and.arrow.down")
+                    }
+                    .foregroundStyle(Color.amber)
+                    .listRowBackground(Color.msSurface)
+                } header: {
+                    Text("Mode")
+                        .foregroundStyle(Color.msMuted)
+                }
+            }
+
             // Sync Folder
             Section {
                 HStack {
                     Label("Sync Folder", systemImage: "folder")
                         .foregroundStyle(Color.msText)
                     Spacer()
-                    Text("iCloud/MarkScout")
-                        .font(.caption)
-                        .foregroundStyle(Color.msMuted)
-                }
-                .listRowBackground(Color.msSurface)
-
-                Button("Change Sync Folder") {
-                    changeSyncFolder()
-                }
-                .foregroundStyle(Color.amber)
-                .listRowBackground(Color.msSurface)
-
-                if isDownloadingAll {
-                    HStack {
-                        Label("Downloading...", systemImage: "arrow.down.circle")
-                            .foregroundStyle(Color.msText)
-                        Spacer()
-                        if downloadProgress.total > 0 {
-                            Text("\(downloadProgress.current)/\(downloadProgress.total)")
-                                .font(.caption)
-                                .foregroundStyle(Color.msMuted)
-                        }
+                    if isInDemoMode {
+                        Text("Demo Data")
+                            .font(.caption)
+                            .foregroundStyle(Color.amber)
+                    } else {
+                        Text("iCloud/MarkScout")
+                            .font(.caption)
+                            .foregroundStyle(Color.msMuted)
                     }
-                    .listRowBackground(Color.msSurface)
-                    ProgressView(value: Double(downloadProgress.current), total: max(1, Double(downloadProgress.total)))
-                        .tint(Color.amber)
-                        .listRowBackground(Color.msSurface)
-                } else {
-                    Button {
-                        downloadAllFiles()
-                    } label: {
-                        Label("Download All Files", systemImage: "arrow.down.circle")
+                }
+                .listRowBackground(Color.msSurface)
+
+                if !isInDemoMode {
+                    Button("Change Sync Folder") {
+                        changeSyncFolder()
                     }
                     .foregroundStyle(Color.amber)
                     .listRowBackground(Color.msSurface)
+
+                    if isDownloadingAll {
+                        HStack {
+                            Label("Downloading...", systemImage: "arrow.down.circle")
+                                .foregroundStyle(Color.msText)
+                            Spacer()
+                            if downloadProgress.total > 0 {
+                                Text("\(downloadProgress.current)/\(downloadProgress.total)")
+                                    .font(.caption)
+                                    .foregroundStyle(Color.msMuted)
+                            }
+                        }
+                        .listRowBackground(Color.msSurface)
+                        ProgressView(value: Double(downloadProgress.current), total: max(1, Double(downloadProgress.total)))
+                            .tint(Color.amber)
+                            .listRowBackground(Color.msSurface)
+                    } else {
+                        Button {
+                            downloadAllFiles()
+                        } label: {
+                            Label("Download All Files", systemImage: "arrow.down.circle")
+                        }
+                        .foregroundStyle(Color.amber)
+                        .listRowBackground(Color.msSurface)
+                    }
+
+                    if let error = downloadError {
+                        HStack {
+                            Image(systemName: "exclamationmark.triangle")
+                                .foregroundStyle(.red)
+                            Text(error)
+                                .font(.caption)
+                                .foregroundStyle(.red)
+                        }
+                        .listRowBackground(Color.msSurface)
+                    }
                 }
 
                 if let manifest = appState.manifest {
@@ -186,26 +240,59 @@ struct SettingsView: View {
         } message: {
             Text("This will remove all cached files. They will be re-downloaded when you refresh.")
         }
+        .alert("Switch to Real Sync", isPresented: $showResetConfirm) {
+            Button("Cancel", role: .cancel) { }
+            Button("Switch") {
+                exitDemoMode()
+            }
+        } message: {
+            Text("This will exit demo mode and take you back to the folder picker so you can select your iCloud MarkScout folder.")
+        }
+    }
+
+    private func exitDemoMode() {
+        DemoDataManager.shared.deactivate()
+        folderManager.clearBookmark()
+        appState.manifest = nil
+        appState.onboardingCompleted = false
     }
 
     private func downloadAllFiles() {
         guard let manifest = appState.manifest else { return }
+        guard !isInDemoMode else {
+            downloadError = "Download is not available in demo mode. Switch to a real sync folder first."
+            return
+        }
+        guard folderManager.hasSavedBookmark else {
+            downloadError = "No sync folder configured. Please select a folder first."
+            return
+        }
         isDownloadingAll = true
+        downloadError = nil
         downloadProgress = (0, manifest.fileCount)
         Task {
             let downloaded = await folderManager.downloadAllFiles(manifest: manifest) { current, total in
-                downloadProgress = (current, total)
+                Task { @MainActor in
+                    downloadProgress = (current, total)
+                }
             }
             await MainActor.run {
                 isDownloadingAll = false
-                if downloaded > 0 {
+                if downloaded == 0 {
+                    downloadError = "Failed to download files. Check your internet connection and make sure iCloud Drive is enabled."
+                } else if downloaded < manifest.fileCount {
+                    downloadError = "Downloaded \(downloaded)/\(manifest.fileCount) files. Some files may still be syncing."
+                } else {
+                    downloadError = nil
                     appState.cacheStatus = .cached
                 }
             }
             // Also update the local cache
-            await cacheManager.cacheAllFiles(manifest: manifest, folderManager: folderManager)
-            await MainActor.run {
-                appState.cacheStatus = .cached
+            if downloaded > 0 {
+                await cacheManager.cacheAllFiles(manifest: manifest, folderManager: folderManager)
+                await MainActor.run {
+                    appState.cacheStatus = .cached
+                }
             }
         }
     }

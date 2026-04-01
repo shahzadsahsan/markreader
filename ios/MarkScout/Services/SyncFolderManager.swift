@@ -59,7 +59,7 @@ class SyncFolderManager {
     /// Returns the number of files successfully downloaded.
     func downloadAllFiles(
         manifest: SyncManifest,
-        onProgress: @escaping (Int, Int) -> Void
+        onProgress: @MainActor @Sendable @escaping (Int, Int) -> Void
     ) async -> Int {
         let folderURL: URL
         do {
