@@ -13,6 +13,7 @@ struct ContentView: View {
                 OnboardingView(folderManager: folderManager) { manifest in
                     appState.manifest = manifest
                     appState.lastSyncCheck = Date()
+                    appState.markOnboardingComplete()
                     hasLoadedManifest = true
                     Task {
                         appState.cacheStatus = .caching(current: 0, total: manifest.fileCount)
@@ -27,6 +28,21 @@ struct ContentView: View {
             }
         }
         .task {
+            // Auto-activate demo mode on simulator if no bookmark exists
+            #if targetEnvironment(simulator)
+            if !appState.hasCompletedOnboarding && DemoDataManager.shared.isAvailable {
+                let demo = DemoDataManager.shared
+                if let manifest = try? demo.loadManifest() {
+                    demo.activate()
+                    appState.manifest = manifest
+                    appState.lastSyncCheck = Date()
+                    appState.cacheStatus = .cached
+                    appState.markOnboardingComplete()
+                    hasLoadedManifest = true
+                    return
+                }
+            }
+            #endif
             guard appState.hasCompletedOnboarding, !hasLoadedManifest else { return }
             await loadManifest()
         }
@@ -125,8 +141,17 @@ struct ContentView: View {
     }
 
     private func loadManifest() async {
+        if DemoDataManager.shared.isActive {
+            if let manifest = try? DemoDataManager.shared.loadManifest() {
+                appState.manifest = manifest
+                appState.lastSyncCheck = Date()
+                appState.cacheStatus = .cached
+            }
+            hasLoadedManifest = true
+            return
+        }
         do {
-            let manifest = try folderManager.readManifest()
+            let manifest = try await folderManager.readManifest()
             appState.manifest = manifest
             appState.isOffline = false
             appState.lastSyncCheck = Date()
@@ -134,7 +159,6 @@ struct ContentView: View {
             await cacheManager.cacheAllFiles(manifest: manifest, folderManager: folderManager)
             appState.cacheStatus = .cached
         } catch {
-            // Try to show cached data
             appState.isOffline = true
             hasLoadedManifest = true
         }

@@ -26,7 +26,7 @@ class SyncFolderManager {
         return url
     }
 
-    func readManifest() throws -> SyncManifest {
+    func readManifest() async throws -> SyncManifest {
         let folderURL = try resolveBookmark()
         guard folderURL.startAccessingSecurityScopedResource() else {
             throw SyncError.accessDenied
@@ -34,11 +34,12 @@ class SyncFolderManager {
         defer { folderURL.stopAccessingSecurityScopedResource() }
 
         let manifestURL = folderURL.appendingPathComponent("manifest.json")
+        try await ensureDownloaded(manifestURL)
         let data = try Data(contentsOf: manifestURL)
         return try JSONDecoder().decode(SyncManifest.self, from: data)
     }
 
-    func readFileContent(relativePath: String) throws -> String {
+    func readFileContent(relativePath: String) async throws -> String {
         let folderURL = try resolveBookmark()
         guard folderURL.startAccessingSecurityScopedResource() else {
             throw SyncError.accessDenied
@@ -46,7 +47,29 @@ class SyncFolderManager {
         defer { folderURL.stopAccessingSecurityScopedResource() }
 
         let fileURL = folderURL.appendingPathComponent("files").appendingPathComponent(relativePath)
+        try await ensureDownloaded(fileURL)
         return try String(contentsOf: fileURL, encoding: .utf8)
+    }
+
+    /// Triggers download of an iCloud-evicted file and waits until it's available.
+    private func ensureDownloaded(_ url: URL) async throws {
+        let values = try? url.resourceValues(forKeys: [.ubiquitousItemDownloadingStatusKey])
+        if let status = values?.ubiquitousItemDownloadingStatus, status == .current {
+            return
+        }
+        if FileManager.default.isReadableFile(atPath: url.path) {
+            if let data = try? Data(contentsOf: url), !data.isEmpty { return }
+        }
+        try? FileManager.default.startDownloadingUbiquitousItem(at: url)
+        // Poll until available (up to 30s)
+        for _ in 0..<60 {
+            if FileManager.default.isReadableFile(atPath: url.path),
+               let data = try? Data(contentsOf: url), !data.isEmpty {
+                return
+            }
+            try await Task.sleep(for: .milliseconds(500))
+        }
+        throw SyncError.fileNotFound(url.lastPathComponent)
     }
 
     func isAccessible() -> Bool {
@@ -100,10 +123,21 @@ class FolderPickerCoordinator: NSObject, UIDocumentPickerDelegate {
         guard let url = urls.first else { return }
         do {
             try folderManager.saveBookmark(for: url)
-            let manifest = try folderManager.readManifest()
-            completion(.success(FolderPickerResult(url: url, manifest: manifest)))
         } catch {
             completion(.failure(error))
+            return
+        }
+        Task {
+            do {
+                let manifest = try await folderManager.readManifest()
+                await MainActor.run {
+                    completion(.success(FolderPickerResult(url: url, manifest: manifest)))
+                }
+            } catch {
+                await MainActor.run {
+                    completion(.failure(error))
+                }
+            }
         }
     }
 

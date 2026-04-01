@@ -33,7 +33,7 @@ struct MarkdownWebView: UIViewRepresentable {
         webView.navigationDelegate = context.coordinator
 
         // Load reader.html from bundle
-        if let htmlURL = Bundle.main.url(forResource: "reader", withExtension: "html", subdirectory: nil) {
+        if let htmlURL = Bundle.main.url(forResource: "reader", withExtension: "html") {
             webView.loadFileURL(htmlURL, allowingReadAccessTo: htmlURL.deletingLastPathComponent())
         }
 

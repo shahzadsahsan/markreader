@@ -57,9 +57,13 @@ class AppState {
         }
     }
 
-    // Onboarding
-    var hasCompletedOnboarding: Bool {
-        UserDefaults.standard.data(forKey: "syncFolderBookmark") != nil
+    // Onboarding — stored property so @Observable can track changes
+    var onboardingCompleted: Bool = UserDefaults.standard.data(forKey: "syncFolderBookmark") != nil || DemoDataManager.shared.isActive
+
+    var hasCompletedOnboarding: Bool { onboardingCompleted }
+
+    func markOnboardingComplete() {
+        onboardingCompleted = true
     }
 
     func isFavorite(_ relativePath: String) -> Bool {

@@ -38,7 +38,7 @@ class LocalCacheManager {
             progress?(i + 1, total)
             if isFileCached(relativePath: file.relativePath, contentHash: file.contentHash) { continue }
             do {
-                let content = try folderManager.readFileContent(relativePath: file.relativePath)
+                let content = try await folderManager.readFileContent(relativePath: file.relativePath)
                 let url = cacheURL(for: file.relativePath)
                 try FileManager.default.createDirectory(at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
                 try content.write(to: url, atomically: true, encoding: .utf8)

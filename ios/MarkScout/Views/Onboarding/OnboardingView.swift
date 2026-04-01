@@ -85,6 +85,17 @@ struct OnboardingView: View {
                 amberButton("Select Folder") {
                     presentFolderPicker()
                 }
+
+                Button {
+                    loadDemoData()
+                } label: {
+                    Text("Use Demo Data (Simulator)")
+                        .font(.system(.callout, design: .monospaced))
+                        .foregroundStyle(Color.msMuted)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 12)
+                }
+                .padding(.horizontal, 32)
                 .padding(.bottom, 48)
             }
             .tag(2)
@@ -116,6 +127,23 @@ struct OnboardingView: View {
         }
         .tabViewStyle(.page(indexDisplayMode: .always))
         .background(Color(hex: "#0d0d0d"))
+    }
+
+    private func loadDemoData() {
+        let demo = DemoDataManager.shared
+        guard demo.isAvailable else {
+            errorMessage = "SampleData not found in bundle"
+            showError = true
+            return
+        }
+        do {
+            let m = try demo.loadManifest()
+            demo.activate()
+            onComplete(m)
+        } catch {
+            errorMessage = "Demo error: \(error)"
+            showError = true
+        }
     }
 
     private func stepRow(_ number: Int, _ text: String) -> some View {

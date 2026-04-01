@@ -225,8 +225,9 @@ struct FileDetailView: View {
 
     private func loadContent() async {
         isLoading = true
-        // Try iCloud first, fall back to cache
-        if let text = try? folderManager.readFileContent(relativePath: file.relativePath) {
+        if DemoDataManager.shared.isActive {
+            content = try? DemoDataManager.shared.readFileContent(relativePath: file.relativePath)
+        } else if let text = try? await folderManager.readFileContent(relativePath: file.relativePath) {
             content = text
         } else if let cached = cacheManager.readCachedContent(relativePath: file.relativePath) {
             content = cached

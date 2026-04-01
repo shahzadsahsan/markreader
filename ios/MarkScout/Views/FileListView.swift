@@ -96,7 +96,7 @@ struct FileListView: View {
 
     private func refreshManifest() async {
         do {
-            let manifest = try folderManager.readManifest()
+            let manifest = try await folderManager.readManifest()
             appState.manifest = manifest
             appState.isOffline = false
             appState.lastSyncCheck = Date()
