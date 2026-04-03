@@ -650,9 +650,14 @@ export default function AppShell() {
         if (!mountedRef.current) return;
         const payload = event.payload;
 
+        // Backend emits: { type, file?, path?, count? }
+        // Extract the file entry or path from the actual JSON keys
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const p = payload as any;
+
         switch (payload.type) {
           case 'file-added': {
-            const entry = payload.data as FileEntry | undefined;
+            const entry = (p.file ?? p.data) as FileEntry | undefined;
             if (!entry?.path) break;
             // Always batch — even after scan-complete — to avoid per-event re-renders
             pendingFilesRef.current.push(entry);
@@ -665,7 +670,7 @@ export default function AppShell() {
           }
 
           case 'file-changed': {
-            const entry = payload.data as FileEntry | undefined;
+            const entry = (p.file ?? p.data) as FileEntry | undefined;
             if (!entry?.path) break;
             // Batch changes too — they'll be merged in flushPendingFiles
             pendingFilesRef.current.push(entry);
@@ -683,15 +688,14 @@ export default function AppShell() {
           }
 
           case 'file-removed': {
-            const data = payload.data as { path: string } | undefined;
-            if (!data?.path) break;
-            setFiles(prev => prev.filter(f => f?.path !== data.path));
+            const removedPath = (p.path ?? (p.data as Record<string, unknown>)?.path) as string | undefined;
+            if (!removedPath) break;
+            setFiles(prev => prev.filter(f => f?.path !== removedPath));
             setTotalFiles(prev => Math.max(0, prev - 1));
             break;
           }
 
           case 'scan-complete': {
-            const data = payload.data as { totalFiles: number; filteredCount: number };
             // Flush remaining pending files from scan
             flushPendingFiles();
             // Clear batch timer — it will be re-created for post-scan events
@@ -699,8 +703,8 @@ export default function AppShell() {
               clearInterval(batchTimerRef.current);
               batchTimerRef.current = null;
             }
-            setTotalFiles(data.totalFiles);
-            setFilteredCount(data.filteredCount);
+            const totalFiles = (p.count ?? (p.data as Record<string, unknown>)?.totalFiles) as number | undefined;
+            if (totalFiles != null) setTotalFiles(totalFiles);
             setScanComplete(true);
             setLoading(false);
             fetchFiles();

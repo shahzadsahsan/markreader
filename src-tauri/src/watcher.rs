@@ -631,18 +631,19 @@ fn periodic_rescan(
         collect_paths(&root, &root, &ctx, &mut found_paths);
     }
 
-    // Additions: paths on disk but not in registry
+    // Additions and modifications: check all paths on disk
     let mut added = 0u32;
+    let mut changed = 0u32;
     for abs_path in &found_paths {
-        if !registry.contains_key(abs_path) {
-            let path = Path::new(abs_path);
-            // Determine the watch root
-            let watch_root = watch_dirs
-                .iter()
-                .find(|d| abs_path.starts_with(d.as_str()))
-                .map(|d| PathBuf::from(d))
-                .unwrap_or_else(|| path.parent().unwrap_or(Path::new("/")).to_path_buf());
+        let path = Path::new(abs_path);
+        let watch_root = watch_dirs
+            .iter()
+            .find(|d| abs_path.starts_with(d.as_str()))
+            .map(|d| PathBuf::from(d))
+            .unwrap_or_else(|| path.parent().unwrap_or(Path::new("/")).to_path_buf());
 
+        if !registry.contains_key(abs_path) {
+            // New file
             if let Some(entry) = build_file_entry(path, &watch_root) {
                 registry.insert(abs_path.clone(), entry.clone());
                 let _ = app_handle.emit(
@@ -653,6 +654,30 @@ fn periodic_rescan(
                     }),
                 );
                 added += 1;
+            }
+        } else {
+            // Existing file — check if modified_at changed
+            let disk_mtime = fs::metadata(path)
+                .ok()
+                .and_then(|m| m.modified().ok())
+                .and_then(|t| t.duration_since(UNIX_EPOCH).ok())
+                .map(|d| d.as_millis() as u64)
+                .unwrap_or(0);
+
+            let registry_mtime = registry.get(abs_path).map(|r| r.modified_at).unwrap_or(0);
+
+            if disk_mtime > registry_mtime {
+                if let Some(entry) = build_file_entry(path, &watch_root) {
+                    registry.insert(abs_path.clone(), entry.clone());
+                    let _ = app_handle.emit(
+                        "file-event",
+                        serde_json::json!({
+                            "type": "file-changed",
+                            "file": entry,
+                        }),
+                    );
+                    changed += 1;
+                }
             }
         }
     }
@@ -676,10 +701,11 @@ fn periodic_rescan(
         removed += 1;
     }
 
-    if added > 0 || removed > 0 {
+    if added > 0 || changed > 0 || removed > 0 {
         log::info!(
-            "[MarkScout] Periodic rescan: +{} added, -{} removed (registry: {})",
+            "[MarkScout] Periodic rescan: +{} added, ~{} changed, -{} removed (registry: {})",
             added,
+            changed,
             removed,
             registry.len()
         );
