@@ -810,6 +810,25 @@ export default function AppShell() {
         }
         if (e.key === 's' || e.key === 'S') { e.preventDefault(); toggleCollapse(); return; }
         if (e.shiftKey && (e.key === 'f' || e.key === 'F')) { e.preventDefault(); toggleFillScreen(); return; }
+
+        // Cmd+Arrow navigates between documents in the sidebar
+        if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+          e.preventDefault();
+          const list = filteredFiles;
+          if (list.length === 0) return;
+          const currentIdx = selectedPath ? list.findIndex(f => f.path === selectedPath) : -1;
+          const down = e.key === 'ArrowDown';
+          const nextIdx = down
+            ? Math.min(currentIdx + 1, list.length - 1)
+            : Math.max(currentIdx - 1, 0);
+          if (nextIdx >= 0 && nextIdx < list.length) {
+            selectFile(list[nextIdx].path);
+            requestAnimationFrame(() => {
+              document.querySelector('[data-selected="true"]')?.scrollIntoView({ block: 'nearest' });
+            });
+          }
+          return;
+        }
       }
 
       switch (e.key) {
@@ -832,15 +851,14 @@ export default function AppShell() {
           setShowShortcuts(prev => !prev);
           break;
         }
+        // j/k = vim-style document navigation (no modifier)
         case 'j':
-        case 'k':
-        case 'ArrowDown':
-        case 'ArrowUp': {
+        case 'k': {
           e.preventDefault();
           const list = filteredFiles;
           if (list.length === 0) break;
           const currentIdx = selectedPath ? list.findIndex(f => f.path === selectedPath) : -1;
-          const down = e.key === 'j' || e.key === 'ArrowDown';
+          const down = e.key === 'j';
           const nextIdx = down
             ? Math.min(currentIdx + 1, list.length - 1)
             : Math.max(currentIdx - 1, 0);
@@ -852,6 +870,7 @@ export default function AppShell() {
           }
           break;
         }
+        // Plain ArrowUp/ArrowDown: let browser scroll the document naturally
       }
     }
 
@@ -1181,7 +1200,9 @@ export default function AppShell() {
               {([
                 ['Cmd + P', 'Quick open (search files)'],
                 ['1 / 2', 'Switch sidebar view'],
-                ['j / k', 'Navigate files (up / down)'],
+                ['↑ / ↓', 'Scroll document'],
+                ['⌘ ↑ / ⌘ ↓', 'Navigate files (prev / next)'],
+                ['j / k', 'Navigate files (prev / next)'],
                 ['s', 'Star / unstar file'],
                 ['/', 'Focus search'],
                 ['Esc', 'Clear search'],
