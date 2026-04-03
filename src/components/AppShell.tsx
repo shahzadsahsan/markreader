@@ -873,10 +873,14 @@ export default function AppShell() {
         // Plain ArrowUp/ArrowDown: scroll the document content area
         case 'ArrowDown':
         case 'ArrowUp': {
+          const amount = e.key === 'ArrowDown' ? 80 : -80;
+          // Try the main content ref first, then fall back to the
+          // closest scrollable ancestor or window
           const main = mainRef.current;
-          if (main) {
-            const amount = e.key === 'ArrowDown' ? 80 : -80;
-            main.scrollBy({ top: amount, behavior: 'auto' });
+          if (main && main.scrollHeight > main.clientHeight) {
+            main.scrollBy({ top: amount });
+          } else {
+            window.scrollBy({ top: amount });
           }
           break;
         }
