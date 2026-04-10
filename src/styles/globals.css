@@ -74,6 +74,18 @@
   --font-serif: var(--font-source-serif-4);
 }
 
+/* Suppress focus outlines on non-interactive elements (divs used as clickable items) */
+*:focus:not(:focus-visible) {
+  outline: none;
+}
+.file-item:focus-visible,
+.star-btn:focus-visible,
+.tab-btn:focus-visible,
+.filter-pill:focus-visible {
+  outline: 1px solid var(--accent);
+  outline-offset: -1px;
+}
+
 /* Base */
 html {
   background: var(--bg);
@@ -484,10 +496,16 @@ pre:hover .copy-btn {
   padding: 0.5rem 0.75rem;
   border-left: 2px solid transparent;
   cursor: pointer;
-  transition: all 0.1s;
+  transition: background 0.15s, border-color 0.15s;
+  outline: none;
+  -webkit-tap-highlight-color: transparent;
 }
 .file-item:hover {
   background: var(--hover-bg);
+}
+/* Suppress hover during keyboard navigation (prevents sticky hover from scrollIntoView) */
+.keyboard-nav .file-item:hover:not(.active) {
+  background: transparent;
 }
 .file-item.active {
   background: var(--active-bg);

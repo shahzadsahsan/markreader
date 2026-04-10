@@ -178,6 +178,35 @@ pub fn run() {
             let sync_manager = SyncManager::new();
             app.manage(sync_manager);
 
+            // Sync-on-launch: if sync is enabled, kick off a full_sync in the
+            // background after the initial scan so files mirror to iCloud on
+            // every app launch without needing a file change or manual click.
+            let sync_handle = app.handle().clone();
+            tauri::async_runtime::spawn(async move {
+                let state_mgr: tauri::State<'_, AppStateManager> = sync_handle.state();
+                if !state_mgr.is_sync_enabled().await {
+                    return;
+                }
+                if !SyncManager::is_icloud_available() {
+                    eprintln!("[MarkScout] sync-on-launch skipped: iCloud not available");
+                    return;
+                }
+                let sync_mgr: tauri::State<'_, SyncManager> = sync_handle.state();
+                let watcher: tauri::State<'_, FileWatcher> = sync_handle.state();
+                eprintln!("[MarkScout] sync-on-launch: starting full_sync");
+                match sync_mgr.full_sync(&watcher, &state_mgr).await {
+                    Ok(status) => {
+                        eprintln!(
+                            "[MarkScout] sync-on-launch: done, {} files, {} bytes",
+                            status.file_count, status.total_size
+                        );
+                    }
+                    Err(e) => {
+                        eprintln!("[MarkScout] sync-on-launch failed: {}", e);
+                    }
+                }
+            });
+
             // Build and set the application menu
             let menu = build_menu(app)?;
             app.set_menu(menu)?;
@@ -186,8 +215,13 @@ pub fn run() {
             if let Some(window) = app.get_webview_window("main") {
                 if let Some(ws) = load_window_state() {
                     use tauri::{LogicalPosition, LogicalSize};
+                    // Clamp to reasonable bounds so a corrupted state file can
+                    // never explode the window across multiple displays. Most
+                    // screens top out around 2560 logical px wide.
+                    let width = (ws.width as f64).clamp(800.0, 2560.0);
+                    let height = (ws.height as f64).clamp(600.0, 1600.0);
+                    let _ = window.set_size(LogicalSize::new(width, height));
                     let _ = window.set_position(LogicalPosition::new(ws.x as f64, ws.y as f64));
-                    let _ = window.set_size(LogicalSize::new(ws.width as f64, ws.height as f64));
                     if ws.maximized {
                         let _ = window.maximize();
                     }
@@ -200,13 +234,17 @@ pub fn run() {
                         tauri::WindowEvent::CloseRequested { .. } => {
                             eprintln!("[MarkScout] window CloseRequested");
                             let mut ws = WindowState::default();
+                            // Scale factor lets us persist *logical* pixels so
+                            // the next launch restores at the same visual size
+                            // regardless of display DPI.
+                            let scale = window_clone.scale_factor().unwrap_or(1.0);
                             if let Ok(pos) = window_clone.outer_position() {
-                                ws.x = pos.x;
-                                ws.y = pos.y;
+                                ws.x = (pos.x as f64 / scale) as i32;
+                                ws.y = (pos.y as f64 / scale) as i32;
                             }
                             if let Ok(size) = window_clone.outer_size() {
-                                ws.width = size.width;
-                                ws.height = size.height;
+                                ws.width = ((size.width as f64) / scale) as u32;
+                                ws.height = ((size.height as f64) / scale) as u32;
                             }
                             if let Ok(maximized) = window_clone.is_maximized() {
                                 ws.maximized = maximized;
@@ -274,6 +312,7 @@ pub fn run() {
             commands::sync_cmds::disable_sync,
             commands::sync_cmds::trigger_full_sync,
             commands::sync_cmds::set_sync_size_threshold,
+            commands::sync_cmds::wipe_icloud_mirror,
         ])
         .run(tauri::generate_context!())
         .expect("error while running MarkScout");

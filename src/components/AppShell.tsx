@@ -822,6 +822,8 @@ export default function AppShell() {
             ? Math.min(currentIdx + 1, list.length - 1)
             : Math.max(currentIdx - 1, 0);
           if (nextIdx >= 0 && nextIdx < list.length) {
+            // Suppress hover during keyboard scroll to prevent sticky hover in WebKit
+            document.body.classList.add('keyboard-nav');
             selectFile(list[nextIdx].path);
             requestAnimationFrame(() => {
               document.querySelector('[data-selected="true"]')?.scrollIntoView({ block: 'nearest' });
@@ -863,6 +865,7 @@ export default function AppShell() {
             ? Math.min(currentIdx + 1, list.length - 1)
             : Math.max(currentIdx - 1, 0);
           if (nextIdx >= 0 && nextIdx < list.length) {
+            document.body.classList.add('keyboard-nav');
             selectFile(list[nextIdx].path);
             requestAnimationFrame(() => {
               document.querySelector('[data-selected="true"]')?.scrollIntoView({ block: 'nearest' });
@@ -887,8 +890,15 @@ export default function AppShell() {
       }
     }
 
+    // Clear keyboard-nav mode on any mouse movement (re-enables hover styles)
+    const clearKeyboardNav = () => document.body.classList.remove('keyboard-nav');
+
     document.addEventListener('keydown', handleKey);
-    return () => document.removeEventListener('keydown', handleKey);
+    document.addEventListener('mousemove', clearKeyboardNav);
+    return () => {
+      document.removeEventListener('keydown', handleKey);
+      document.removeEventListener('mousemove', clearKeyboardNav);
+    };
   }, [changeView, toggleStar, selectFile, selectedPath, filteredFiles, zoomIn, zoomOut, zoomReset, toggleFillScreen, toggleCollapse, sidebarCollapsed]);
 
   // --- Trigger native folder picker (Tauri dialog) ---

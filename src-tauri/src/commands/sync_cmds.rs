@@ -27,11 +27,15 @@ pub async fn enable_sync(app_handle: tauri::AppHandle) -> Result<SyncStatus, Str
     sync_mgr.full_sync(&watcher, &state_mgr).await
 }
 
+/// Disable sync: flip the flag only. Does NOT delete the iCloud mirror —
+/// files stay in place so the user can re-enable or force a refresh without
+/// losing their iOS companion's data. Use `wipe_icloud_mirror` for the
+/// explicit destructive path.
 #[tauri::command]
 pub async fn disable_sync(app_handle: tauri::AppHandle) -> Result<(), String> {
     let state_mgr: tauri::State<'_, AppStateManager> = app_handle.state();
     state_mgr.set_sync_enabled(false).await.map_err(|e| e.to_string())?;
-    SyncManager::cleanup()
+    Ok(())
 }
 
 #[tauri::command]
@@ -53,4 +57,15 @@ pub async fn set_sync_size_threshold(
 ) -> Result<(), String> {
     let state_mgr: tauri::State<'_, AppStateManager> = app_handle.state();
     state_mgr.set_sync_size_threshold(bytes).await.map_err(|e| e.to_string())
+}
+
+/// Explicit, destructive nuke of the iCloud mirror directory. Separate from
+/// `disable_sync` so the toggle can be reversible. Call this when the user
+/// explicitly wants to clear the mirror.
+#[tauri::command]
+pub async fn wipe_icloud_mirror(app_handle: tauri::AppHandle) -> Result<(), String> {
+    let state_mgr: tauri::State<'_, AppStateManager> = app_handle.state();
+    // Flip sync off so the next launch won't immediately re-mirror.
+    state_mgr.set_sync_enabled(false).await.map_err(|e| e.to_string())?;
+    SyncManager::cleanup()
 }

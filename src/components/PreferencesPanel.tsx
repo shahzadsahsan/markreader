@@ -30,34 +30,67 @@ export function PreferencesPanel({ open: isOpen, onClose, onPresetsChanged }: Pr
   const [activeTypography, setActiveTypography] = useState(() => loadSavedTypography());
   const [syncStatus, setSyncStatus] = useState<SyncStatus | null>(null);
   const [syncLoading, setSyncLoading] = useState(false);
+  const [syncError, setSyncError] = useState<string | null>(null);
 
   const loadSyncStatus = useCallback(async () => {
     try {
       const status = await api.getSyncStatus();
       setSyncStatus(status);
-    } catch { /* ignore */ }
+    } catch (err) {
+      setSyncError(err instanceof Error ? err.message : String(err));
+    }
   }, []);
 
   const handleToggleSync = async () => {
     setSyncLoading(true);
+    setSyncError(null);
     try {
       if (syncStatus?.enabled) {
         await api.disableSync();
       } else {
         await api.enableSync();
       }
+    } catch (err) {
+      setSyncError(err instanceof Error ? err.message : String(err));
+    } finally {
       await loadSyncStatus();
-    } catch { /* ignore */ }
-    setSyncLoading(false);
+      setSyncLoading(false);
+    }
   };
 
   const handleSyncNow = async () => {
     setSyncLoading(true);
+    setSyncError(null);
     try {
-      await api.triggerFullSync();
+      if (syncStatus?.enabled) {
+        await api.triggerFullSync();
+      } else {
+        // Sync is off — enabling it runs a full_sync as part of the same call.
+        await api.enableSync();
+      }
+    } catch (err) {
+      setSyncError(err instanceof Error ? err.message : String(err));
+    } finally {
       await loadSyncStatus();
-    } catch { /* ignore */ }
-    setSyncLoading(false);
+      setSyncLoading(false);
+    }
+  };
+
+  const handleWipeMirror = async () => {
+    const ok = window.confirm(
+      'This will delete the entire MarkScout folder in iCloud Drive. Your local files stay safe. Continue?'
+    );
+    if (!ok) return;
+    setSyncLoading(true);
+    setSyncError(null);
+    try {
+      await api.wipeIcloudMirror();
+    } catch (err) {
+      setSyncError(err instanceof Error ? err.message : String(err));
+    } finally {
+      await loadSyncStatus();
+      setSyncLoading(false);
+    }
   };
 
   const handleTypographyChange = (id: string) => {
@@ -260,22 +293,29 @@ export function PreferencesPanel({ open: isOpen, onClose, onPresetsChanged }: Pr
                           Sync to iCloud Drive
                         </span>
                       </div>
-                      {syncStatus?.enabled && (
-                        <button
-                          onClick={handleSyncNow}
-                          disabled={syncLoading}
-                          className="text-[10px] px-2 py-0.5 rounded transition-colors"
-                          style={{ color: 'var(--accent)', background: 'var(--hover-bg)', border: '1px solid var(--border)', cursor: syncLoading ? 'wait' : 'pointer' }}
-                        >
-                          Sync Now
-                        </button>
-                      )}
+                      <button
+                        onClick={handleSyncNow}
+                        disabled={syncLoading}
+                        className="text-[10px] px-2 py-0.5 rounded transition-colors"
+                        style={{ color: 'var(--accent)', background: 'var(--hover-bg)', border: '1px solid var(--border)', cursor: syncLoading ? 'wait' : 'pointer' }}
+                        title={syncStatus?.enabled ? 'Force a full re-sync' : 'Enable sync and mirror now'}
+                      >
+                        {syncLoading ? 'Syncing...' : syncStatus?.enabled ? 'Sync Now' : 'Sync Now & Enable'}
+                      </button>
                     </div>
                     <p className="text-[10px] mb-2" style={{ color: 'var(--text-muted)' }}>
-                      Mirrors your markdown files to iCloud Drive for the MarkScout iOS companion app.
+                      Mirrors your markdown files to iCloud Drive for the MarkScout iOS companion app. Turning sync off keeps existing files in iCloud so you can re-enable without losing data.
                     </p>
-                    {syncStatus?.enabled && syncStatus.lastSyncedAt && (
-                      <div className="text-[10px] px-3 py-1.5 rounded-lg" style={{ background: 'var(--hover-bg)', color: 'var(--text-muted)' }}>
+                    {syncError && (
+                      <div
+                        className="text-[10px] px-3 py-1.5 rounded-lg mb-2"
+                        style={{ background: 'rgba(248,113,113,0.12)', color: '#f87171', border: '1px solid rgba(248,113,113,0.3)' }}
+                      >
+                        {syncError}
+                      </div>
+                    )}
+                    {syncStatus?.lastSyncedAt && (
+                      <div className="text-[10px] px-3 py-1.5 rounded-lg mb-2" style={{ background: 'var(--hover-bg)', color: 'var(--text-muted)' }}>
                         {syncStatus.fileCount} files &middot;{' '}
                         {syncStatus.totalSize < 1024 * 1024
                           ? `${(syncStatus.totalSize / 1024).toFixed(0)} KB`
@@ -283,6 +323,15 @@ export function PreferencesPanel({ open: isOpen, onClose, onPresetsChanged }: Pr
                         {' '}&middot; Last synced {formatRelativeTime(syncStatus.lastSyncedAt)}
                       </div>
                     )}
+                    <button
+                      onClick={handleWipeMirror}
+                      disabled={syncLoading}
+                      className="text-[10px] px-2 py-0.5 rounded transition-colors"
+                      style={{ color: '#f87171', background: 'transparent', border: '1px solid var(--border)', cursor: syncLoading ? 'wait' : 'pointer' }}
+                      title="Delete the entire MarkScout folder in iCloud Drive"
+                    >
+                      Wipe iCloud mirror
+                    </button>
                   </>
                 )}
               </div>

@@ -161,6 +161,9 @@ export const api = {
   setSyncSizeThreshold: (bytes: number) =>
     invoke<void>('set_sync_size_threshold', { bytes }),
 
+  wipeIcloudMirror: () =>
+    invoke<void>('wipe_icloud_mirror'),
+
   // --- v0.5: Session Intelligence ---
   getWhatsNew: () =>
     invoke<WhatsNewResponse>('get_whats_new'),
